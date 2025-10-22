@@ -10,14 +10,9 @@
 
 <style>
   :root{
-    /* 配色・サイズ */
     --bg:#ffffff; --ink:#0f172a; --muted:#e5e7eb; --accent:#1e90ff; --done:#22c55e;
     --gap:12px; --card-pad:12px; --btn-fz:16px; --btn-py:12px; --btn-px:14px;
-
-    /* レイアウト */
-    --clockMaxW: 64vw;         /* 横2カラム時の時計最大幅 */
-    --clockMaxH: 70svh;        /* 高さ制約 */
-    --safe-b: env(safe-area-inset-bottom, 0px);
+    --clockMaxW: 64vw; --clockMaxH: 70svh; --safe-b: env(safe-area-inset-bottom, 0px);
   }
   *{ box-sizing:border-box }
   html,body{ height:100% }
@@ -30,61 +25,59 @@
     padding-bottom:calc(var(--safe-b) + 4px);
   }
 
-  /* ===== 画面いっぱいの2カラム（横向き/ボード向け） ===== */
+  /* ===== レイアウト ===== */
   .shell{
     min-height:100svh;
     display:grid;
-    grid-template-columns: minmax(420px, 1.15fr) minmax(360px, 0.85fr);
+    /* 右カラムを約2/3に縮小（比率 1.45 : 0.55）＆最小幅も 240px に */
+    grid-template-columns: minmax(520px, 1.45fr) minmax(240px, 0.55fr);
     grid-template-rows: auto 1fr;
-    grid-template-areas:
-      "head head"
-      "clock side";
+    grid-template-areas:"head head" "clock side";
     gap:var(--gap);
     padding:10px clamp(10px, 2vw, 18px);
     max-width:1400px; margin:0 auto;
   }
   .topbar{ grid-area:head; display:flex; align-items:flex-end; justify-content:space-between; gap:10px }
   h1{ margin:0; font-size:clamp(18px,3.6vw,28px); letter-spacing:.02em }
-  .sub{ margin:0; opacity:.75; font-size:clamp(12px,2.2vw,14px) }
 
   .clock-pane{ grid-area:clock; display:flex; align-items:center; justify-content:center; }
+  .clock-wrap{ display:flex; flex-direction:column; align-items:center; gap:8px }
   svg#clock{ width:min(var(--clockMaxW),var(--clockMaxH)); height:auto; max-height:var(--clockMaxH) }
+
+  /* デジタル時刻（12時間表示） */
+  .digital{ display:flex; flex-direction:column; align-items:center; gap:4px; }
+  #digitalTime{
+    font-weight:700; font-variant-numeric:tabular-nums;
+    font-size:clamp(18px,4.4vw,24px); letter-spacing:.02em;
+    padding:8px 12px; border-radius:12px; border:1px solid var(--muted);
+    background:#fff; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,.05);
+  }
+  .tap-hint{ margin:0; font-size:12px; color:#6b7280 }
 
   .side{
     grid-area:side;
-    display:grid;
-    grid-template-rows: auto auto auto 1fr; /* panel / ctrl / sound / numeric */
-    gap:var(--gap);
-    min-height:0;
+    display:grid; gap:var(--gap); grid-auto-rows:auto; min-height:0;
   }
 
   .panel, .ctrl, .sound, .numeric{
-    padding:var(--card-pad);
-    border:1px solid var(--muted);
-    border-radius:14px;
-    background:#fff;
+    padding:var(--card-pad); border:1px solid var(--muted);
+    border-radius:14px; background:#fff;
   }
-
   .panel{ display:grid; gap:8px; text-align:center }
   .remain{ font-weight:700; font-size:clamp(22px,5vw,36px); letter-spacing:.02em }
   .eta{ font-size:clamp(12px,2.4vw,15px); opacity:.85 }
   .status{ font-size:12px; color:#64748b }
 
-  .ctrl{
-    display:flex; gap:8px; justify-content:center; align-items:center;
-  }
+  .ctrl{ display:flex; gap:8px; justify-content:center; align-items:center; }
   .btn{
     padding:var(--btn-py) var(--btn-px);
     border-radius:12px; border:1px solid var(--muted);
     background:#fff; font-size:var(--btn-fz); cursor:pointer;
-    box-shadow:0 1px 2px rgba(0,0,0,.05);
-    min-height:44px;
+    box-shadow:0 1px 2px rgba(0,0,0,.05); min-height:44px;
   }
   .btn.primary{ background:var(--accent); color:#fff; border-color:var(--accent) }
   .btn:active{ transform:translateY(1px) }
 
-  /* ===== サウンド（スマホで折りたたみ） ===== */
-  details.sound{ display:block; }
   details.sound > summary{
     list-style:none; user-select:none; -webkit-user-select:none; cursor:pointer;
     font-weight:700; display:flex; align-items:center; justify-content:space-between;
@@ -92,19 +85,13 @@
     background:#fff;
   }
   details.sound[open] > summary{ border-bottom-left-radius:8px; border-bottom-right-radius:8px }
-  details.sound > summary::marker{ content:"" }
   .sound-body{ padding:10px 0 0 }
   .sound-row{ display:grid; grid-template-columns: 1fr auto; gap:8px; align-items:center }
-  .sound select, .sound input[type="file"]{
-    width:100%; padding:10px; font-size:16px; border:1px solid var(--muted); border-radius:10px; background:#f9fafb;
-  }
-  .sound small{ color:#64748b }
+  .sound select{ width:100%; padding:10px; font-size:16px; border:1px solid var(--muted); border-radius:10px; background:#f9fafb; }
 
-  /* 数字入力＋外側矢印（即時反映） */
   .numeric{ display:grid; gap:10px }
   .num-grid{
-    display:grid;
-    grid-template-columns: 1fr auto 1fr auto;
+    display:grid; grid-template-columns: 1fr auto 1fr auto;
     gap:10px; align-items:center; justify-content:center;
   }
   .field{ display:flex; align-items:center; gap:10px; justify-content:center }
@@ -117,7 +104,6 @@
   }
   input[type="number"]::-webkit-outer-spin-button,
   input[type="number"]::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0 }
-
   .arrows{ display:flex; flex-direction:column; gap:6px }
   .btn-arrow{
     width:44px; height:36px; border-radius:10px; font-weight:700;
@@ -126,7 +112,6 @@
   }
   .hint{ margin:0; text-align:center; font-size:12px; color:#6b7280 }
 
-  /* ===== 低い画面（プロジェクター/小さなタブレット）向け圧縮 ===== */
   @media (max-height:760px){
     :root{ --clockMaxH: 58svh }
     .panel, .ctrl, .numeric{ padding:10px }
@@ -138,92 +123,78 @@
     .remain{ font-size:clamp(20px,4.4vw,30px) }
   }
 
-  /* ===== スマホ最適（縦長）：1カラム＋下部固定コントロール ===== */
   @media (max-width:920px){
     .shell{
       grid-template-columns: 1fr;
       grid-template-rows: auto auto 1fr;
-      grid-template-areas:
-        "head"
-        "clock"
-        "side";
+      grid-template-areas:"head" "clock" "side";
       gap:10px;
     }
     :root{ --clockMaxW: 92vw; --clockMaxH: 56svh }
-    .side{
-      grid-template-rows: auto auto auto;  /* panel / sound / numeric */
-      gap:10px;
-      padding-bottom:calc(64px + var(--safe-b)); /* 下の固定ボタン分の余白 */
-    }
-    /* パネルの表示密度を上げる */
-    .panel{ gap:6px }
-    /* コントロールバーを画面下に固定（親の外へ移動せず実現） */
-    .ctrl{
-      position:fixed; left:0; right:0;
-      bottom:calc(8px + var(--safe-b));
-      margin:0 auto; max-width:680px;
-      z-index:20;
-      background:#fff; border:1px solid var(--muted); border-radius:14px;
-      padding:8px; gap:8px;
-      box-shadow:0 6px 24px rgba(0,0,0,.08);
-    }
-    .btn.primary{ flex:1 }
-    .btn{ min-width:0 }
-    /* スマホではサウンドを折りたたみ（summaryのみ表示） */
+    .side{ padding-bottom:0; gap:10px; }
+    .btn.primary{ flex:1 } .btn{ min-width:0 }
     details.sound:not([open]) .sound-body{ display:none }
   }
-
-  /* 極小端末向け微調整 */
   @media (max-width:520px){
     .num-grid{ grid-template-columns: 1fr auto; row-gap:10px }
     .label{ min-width:2.2em }
     :root{ --clockMaxH: 52svh }
   }
 
-  /* 完了時の軽いフラッシュ */
   .flash{ animation:flash .9s ease-out 2 }
   @keyframes flash{
     0%{ box-shadow:0 0 0 0 rgba(34,197,94,.0) }
     50%{ box-shadow:0 0 0 12px rgba(34,197,94,.25) }
     100%{ box-shadow:0 0 0 0 rgba(34,197,94,0) }
   }
+
+
+  /* 時刻調整ダイアログ */
+  dialog#timeDlg{ border:none; border-radius:14px; padding:14px;
+    width:min(92vw, 420px); box-shadow:0 10px 30px rgba(0,0,0,.2); }
+  #timeDlg::backdrop{ background:rgba(0,0,0,.25) }
+  .dlg-title{ margin:0 0 6px 0; font-size:18px; font-weight:700 }
+  .dlg-row{ display:grid; grid-template-columns: 1fr auto; align-items:center; gap:10px; margin:10px 0 }
+  #timeInput{ font-size:18px; padding:8px 10px; border:1px solid var(--muted); border-radius:10px; background:#f9fafb }
+  .offset-line{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .offset-badges{ display:flex; flex-wrap:wrap; gap:6px }
+  .badge{ padding:6px 10px; border:1px solid var(--muted); border-radius:10px; background:#fff; cursor:pointer; }
+  .dlg-actions{ display:flex; gap:8px; justify-content:flex-end; margin-top:12px }
+  .dlg-actions .left{ margin-right:auto }
+  .muted{ color:#64748b; font-size:12px; margin:0 }
 </style>
 </head>
 <body>
   <div class="shell" id="app">
-    <header class="topbar">
-      <div>
-        <h1>時計タイマー</h1>
-
-      </div>
-    </header>
+    <header class="topbar"><div><h1>時計タイマー</h1></div></header>
 
     <section class="clock-pane">
-      <svg id="clock" viewBox="0 0 300 300" role="img" aria-label="アナログ時計">
-        <defs>
-          <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-            <feDropShadow dx="0" dy="1" stdDeviation="1" flood-color="#000" flood-opacity=".22"/>
-          </filter>
-        </defs>
-        <!-- 盤 -->
-        <circle cx="150" cy="150" r="140" fill="#fff" stroke="#d8dde3" stroke-width="2"/>
-        <g id="ticks"></g>
-        <g id="nums"></g>
-        <!-- 外周ガイド -->
-        <circle cx="150" cy="150" r="132" fill="none" stroke="#eef2f7" stroke-width="8"/>
+      <div class="clock-wrap">
+        <svg id="clock" viewBox="0 0 300 300" role="img" aria-label="アナログ時計">
+          <defs>
+            <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+              <feDropShadow dx="0" dy="1" stdDeviation="1" flood-color="#000" flood-opacity=".22"/>
+            </filter>
+          </defs>
+          <circle cx="150" cy="150" r="140" fill="#fff" stroke="#d8dde3" stroke-width="2"/>
+          <g id="ticks"></g><g id="nums"></g>
+          <circle cx="150" cy="150" r="132" fill="none" stroke="#eef2f7" stroke-width="8"/>
+          <path id="timerArc" d="" fill="none" stroke="var(--accent)" stroke-width="10"
+                stroke-linecap="round" filter="url(#shadow)" style="display:none"/>
+          <g id="hands" transform="translate(150,150)">
+            <line id="hand-hour"   x1="0" y1="12" x2="0" y2="-70"  stroke="#0f172a" stroke-width="6" stroke-linecap="round"/>
+            <line id="hand-minute" x1="0" y1="14" x2="0" y2="-110" stroke="#0f172a" stroke-width="4" stroke-linecap="round"/>
+            <line id="hand-sec"    x1="0" y1="16" x2="0" y2="-120" stroke="#ef4444"  stroke-width="2" stroke-linecap="round"/>
+            <circle cx="0" cy="0" r="5" fill="#0f172a"/>
+          </g>
+        </svg>
 
-        <!-- タイマー弧（長針が進むほど短くなる） -->
-        <path id="timerArc" d="" fill="none" stroke="var(--accent)" stroke-width="10"
-              stroke-linecap="round" filter="url(#shadow)" style="display:none"/>
-
-        <!-- 針 -->
-        <g id="hands" transform="translate(150,150)">
-          <line id="hand-hour"   x1="0" y1="12" x2="0" y2="-70"  stroke="#0f172a" stroke-width="6" stroke-linecap="round"/>
-          <line id="hand-minute" x1="0" y1="14" x2="0" y2="-110" stroke="#0f172a" stroke-width="4" stroke-linecap="round"/>
-          <line id="hand-sec"    x1="0" y1="16" x2="0" y2="-120" stroke="#ef4444"  stroke-width="2" stroke-linecap="round"/>
-          <circle cx="0" cy="0" r="5" fill="#0f172a"/>
-        </g>
-      </svg>
+        <!-- デジタル表示（12時間表示・タップで調整） -->
+        <div class="digital">
+          <button id="digitalTime" type="button" aria-label="現在時刻（12時間表記・タップで調整）">--:--:--</button>
+          <p class="tap-hint">タップで調整</p>
+        </div>
+      </div>
     </section>
 
     <aside class="side">
@@ -233,7 +204,6 @@
         <div class="status" id="statusText" aria-live="polite">待機中</div>
       </div>
 
-      <!-- ▼ サウンド（スマホは折りたたみ） -->
       <details id="soundBox" class="sound" aria-label="アラーム音の設定">
         <summary>🔔 アラーム音 <span id="soundName">（ピピピ）</span></summary>
         <div class="sound-body">
@@ -244,37 +214,31 @@
               <option value="bell">ベル（トライアングル風）</option>
               <option value="long">のびるビープ</option>
               <option value="down3">下降3音</option>
-             
             </select>
             <button class="btn" id="btnPreview" type="button">試聴</button>
           </div>
-          <div class="sound-row" id="fileRow" style="display:none">
-
-          </div>
         </div>
       </details>
-      <!-- ▲ サウンド -->
 
+      <!-- 分・秒 -->
       <div class="numeric" aria-label="時間設定（数字入力＋矢印・即時反映）">
         <div class="num-grid">
-          <!-- 分 -->
           <div class="field">
             <span class="label">分</span>
             <div class="inputWrap">
               <input id="minInput" type="number" min="0" max="60" step="1" value="5" inputmode="numeric" aria-label="分">
               <div class="arrows" data-for="minInput">
-                <button class="btn-arrow up"   type="button" aria-label="分を増やす">▲</button>
+                <button class="btn-arrow up" type="button" aria-label="分を増やす">▲</button>
                 <button class="btn-arrow down" type="button" aria-label="分を減らす">▼</button>
               </div>
             </div>
           </div>
-          <!-- 秒 -->
           <div class="field">
             <span class="label">秒</span>
             <div class="inputWrap">
               <input id="secInput" type="number" min="0" max="59" step="1" value="0" inputmode="numeric" aria-label="秒">
               <div class="arrows" data-for="secInput">
-                <button class="btn-arrow up"   type="button" aria-label="秒を増やす">▲</button>
+                <button class="btn-arrow up" type="button" aria-label="秒を増やす">▲</button>
                 <button class="btn-arrow down" type="button" aria-label="秒を減らす">▼</button>
               </div>
             </div>
@@ -282,19 +246,48 @@
         </div>
         <p class="hint">数字/矢印で即時反映（最大60分）</p>
       </div>
-    </aside>
 
-    <!-- 画面下固定の操作バー（スマホで表示） -->
-    <div class="ctrl" id="ctrlBar">
-      <button class="btn primary" id="btnStart">開始</button>
-      <button class="btn" id="btnPause">一時停止</button>
-      <button class="btn" id="btnReset">リセット</button>
-    </div>
+      <!-- 操作ボタン -->
+      <div class="ctrl" id="ctrlBar">
+        <button class="btn primary" id="btnStart">開始</button>
+        <button class="btn" id="btnPause">一時停止</button>
+        <button class="btn" id="btnReset">リセット</button>
+      </div>
+    </aside>
   </div>
+
+  <!-- 時刻調整ダイアログ -->
+  <dialog id="timeDlg" aria-labelledby="dlgTitle">
+    <h3 class="dlg-title" id="dlgTitle">時計の時刻調整</h3>
+    <p class="muted">教室の壁掛け時計とずれているときに使います。補正は端末に保存されます。</p>
+
+    <div class="dlg-row">
+      <label for="timeInput">表示したい時刻</label>
+      <input id="timeInput" type="time" step="60" aria-label="表示したい時刻（分単位）">
+    </div>
+
+    <div class="offset-line">
+      <div>現在の補正：<strong id="offsetText">±0分0秒</strong></div>
+      <div class="offset-badges">
+        <button type="button" class="badge" data-d="-300000">-5分</button>
+        <button type="button" class="badge" data-d="-60000">-1分</button>
+        <button type="button" class="badge" data-d="-10000">-10秒</button>
+        <button type="button" class="badge" data-d="10000">+10秒</button>
+        <button type="button" class="badge" data-d="60000">+1分</button>
+        <button type="button" class="badge" data-d="300000">+5分</button>
+      </div>
+    </div>
+
+    <div class="dlg-actions">
+      <button type="button" class="btn left" id="btnResetOffset">リセット</button>
+      <button type="button" class="btn" id="btnCancelDlg">キャンセル</button>
+      <button type="button" class="btn primary" id="btnSaveOffset">保存</button>
+    </div>
+  </dialog>
 
   <script>
   (() => {
-    // ===== ズーム抑止（iOS/Androidダブルタップ） =====
+    // ===== ズーム抑止 =====
     let lastTouchEnd = 0;
     document.addEventListener('dblclick', e => e.preventDefault(), {passive:false});
     document.addEventListener('touchend', e => {
@@ -304,7 +297,6 @@
     }, {passive:false});
 
     // ===== 参照 =====
-    const clock = document.getElementById('clock');
     const ticksG = document.getElementById('ticks');
     const numsG  = document.getElementById('nums');
     const hH = document.getElementById('hand-hour');
@@ -323,15 +315,31 @@
     const minInput = document.getElementById('minInput');
     const secInput = document.getElementById('secInput');
 
-    // サウンド
     const soundBox    = document.getElementById('soundBox');
     const soundSelect = document.getElementById('soundSelect');
     const btnPreview  = document.getElementById('btnPreview');
-    const soundFile   = document.getElementById('soundFile');
-    const fileRow     = document.getElementById('fileRow');
     const soundName   = document.getElementById('soundName');
 
-    // ===== 目盛り＆数字 =====
+    const digitalBtn  = document.getElementById('digitalTime');
+    const timeDlg     = document.getElementById('timeDlg');
+    const timeInput   = document.getElementById('timeInput');
+    const offsetText  = document.getElementById('offsetText');
+    const btnResetOffset = document.getElementById('btnResetOffset');
+    const btnSaveOffset  = document.getElementById('btnSaveOffset');
+    const btnCancelDlg   = document.getElementById('btnCancelDlg');
+
+    // ===== 時計補正（オフセット） =====
+    let offsetMs = Number(localStorage.getItem('clockOffsetMs') || 0);
+    let offsetMsBeforeOpen = offsetMs;
+
+    const SOUND_LABELS = { pipipi:'ピピピ', chime:'チャイム', bell:'ベル', long:'のびるビープ', down3:'下降3音', file:'カスタム' };
+    function updateSoundName(){ soundName.textContent = `（${SOUND_LABELS[soundSelect.value]||'ピピピ'}）`; }
+    updateSoundName();
+
+    soundSelect.addEventListener('change', updateSoundName);
+    btnPreview.addEventListener('click', () => { playAlarm(); });
+
+    // 目盛り＆数字
     for (let i=0;i<60;i++){
       const a = (i/60)*2*Math.PI;
       const outer = 138;
@@ -350,10 +358,8 @@
       const x = 150 + Math.sin(a)*r, y = 150 - Math.cos(a)*r + 5;
       const t = document.createElementNS("http://www.w3.org/2000/svg","text");
       t.setAttribute("x",x); t.setAttribute("y",y);
-      t.setAttribute("text-anchor","middle");
-      t.setAttribute("font-size","16");
-      t.setAttribute("font-weight","700");
-      t.textContent = h;
+      t.setAttribute("text-anchor","middle"); t.setAttribute("font-size","16");
+      t.setAttribute("font-weight","700"); t.textContent = h;
       numsG.appendChild(t);
     }
 
@@ -363,54 +369,82 @@
     let running = false;
     let startTimeMs = 0;
     let endTimeMs = 0;
-    let visualStartDeg = nowMinuteAngleDeg(); // 起点＝現在の長針角（毎フレーム更新）
+    let visualStartDeg = nowMinuteAngleDeg();
 
     let rafId = 0;
     let audioCtx = null;
     let customBuffer = null;
-    let wakeLock = null;
+  
 
-    // ===== デスクトップではサウンドパネルを開いた状態に =====
     if (window.matchMedia('(min-width: 921px)').matches) {
       soundBox.setAttribute('open','');
     }
 
-    // ===== サウンドUI =====
-    const SOUND_LABELS = {
-      pipipi:'ピピピ', chime:'チャイム', bell:'ベル', long:'のびるビープ', down3:'下降3音', file:'カスタム'
-    };
-    function updateSoundName(){
-      soundName.textContent = `（${SOUND_LABELS[soundSelect.value]||'ピピピ'}）`;
+    // ===== ユーティリティ =====
+    function adjustedNow(){ return new Date(Date.now() + offsetMs); }
+    function fmtOffset(ms){
+      const sign = ms>=0 ? '+' : '−';
+      const a = Math.abs(ms); const m = Math.floor(a/60000);
+      const s = Math.floor((a%60000)/1000);
+      return `${sign}${m}分${s}秒`;
     }
-    updateSoundName();
+    // 12時間表記（午前/午後）で固定
+    function format12JP(d){
+      let h24 = d.getHours();
+      const am = h24 < 12;
+      let h12 = h24 % 12; if(h12 === 0) h12 = 12;
+      const mm = String(d.getMinutes()).padStart(2,'0');
+      const ss = String(d.getSeconds()).padStart(2,'0');
+      return `${am ? '午前' : '午後'} ${h12}:${mm}:${ss}`;
+    }
 
-    soundSelect.addEventListener('change', () => {
-      const isFile = soundSelect.value === 'file';
-      fileRow.style.display = isFile ? '' : 'none';
-      updateSoundName();
+    // ===== デジタル表示（12時間） =====
+    let lastSecShown = -1;
+    function updateDigital(){
+      const d = adjustedNow();
+      const sec = d.getSeconds();
+      if(sec === lastSecShown) return;
+      lastSecShown = sec;
+      digitalBtn.textContent = format12JP(d);
+    }
+    digitalBtn.addEventListener('click', () => {
+      offsetMsBeforeOpen = offsetMs;
+      const d = adjustedNow();
+      timeInput.value = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+      offsetText.textContent = fmtOffset(offsetMs);
+      timeDlg.showModal();
     });
-    soundFile?.addEventListener('change', async (e) => {
-      customBuffer = null;
-      const file = e.target.files?.[0];
-      if(!file) return;
-      await ensureAudio();
-      try{
-        const arr = await file.arrayBuffer();
-        customBuffer = await audioCtx.decodeAudioData(arr);
-      }catch(err){
-        alert('音声ファイルを読み込めませんでした。別形式でお試しください。');
-        console.error(err);
-      }
-    });
-    btnPreview.addEventListener('click', () => { playAlarm(); });
 
-    // ===== 数字入力：即時反映 =====
+    timeDlg.querySelectorAll('.badge').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        offsetMs += Number(b.dataset.d||0);
+        offsetText.textContent = fmtOffset(offsetMs);
+        localStorage.setItem('clockOffsetMs', String(offsetMs));
+        const d = adjustedNow();
+        timeInput.value = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+      });
+    });
+    timeInput.addEventListener('change', ()=>{
+      const now = new Date();
+      const [hh,mm] = (timeInput.value || '00:00').split(':').map(n=>parseInt(n||'0',10));
+      const target = new Date(now);
+      target.setHours(hh, mm, now.getSeconds(), now.getMilliseconds());
+      offsetMs = target.getTime() - now.getTime();
+      offsetText.textContent = fmtOffset(offsetMs);
+    });
+    btnResetOffset.addEventListener('click', ()=>{
+      offsetMs = 0; offsetText.textContent = fmtOffset(offsetMs);
+      const d = adjustedNow();
+      timeInput.value = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    });
+    btnCancelDlg.addEventListener('click', ()=>{ offsetMs = offsetMsBeforeOpen; timeDlg.close(); });
+    btnSaveOffset.addEventListener('click', ()=>{ localStorage.setItem('clockOffsetMs', String(offsetMs)); timeDlg.close(); });
+
+    // ===== 入力（分・秒） =====
     [minInput, secInput].forEach(el => {
       el.addEventListener('input', () => applyFromInputs(false));
       el.addEventListener('change', () => applyFromInputs(false));
     });
-
-    // 外側矢印：長押し対応
     document.querySelectorAll('.arrows').forEach(group => {
       const targetId = group.dataset.for;
       const upBtn = group.querySelector('.up');
@@ -422,8 +456,7 @@
       let holdTo = null, holdIv = null;
       const step = () => { nudgeInput(targetId, delta); applyFromInputs(false); };
       const start = (e) => {
-        e.preventDefault();
-        step();
+        e.preventDefault(); step();
         clearTimeout(holdTo); clearInterval(holdIv);
         holdTo = setTimeout(() => { holdIv = setInterval(step, 60); }, 300);
       };
@@ -433,36 +466,25 @@
       ['mouseup','mouseleave','touchend','touchcancel'].forEach(ev => btn.addEventListener(ev, end));
     }
 
-    function getMS(){
-      let m = parseInt(minInput.value, 10); if(isNaN(m)) m = 0;
-      let s = parseInt(secInput.value, 10); if(isNaN(s)) s = 0;
-      return {m,s};
-    }
-    function setMS(m, s){ minInput.value = m; secInput.value = s; }
+    function getMS(){ let m = parseInt(minInput.value,10)||0; let s = parseInt(secInput.value,10)||0; return {m,s}; }
+    function setMS(m,s){ minInput.value = m; secInput.value = s; }
     function clamp(v,min,max){ return Math.min(max, Math.max(min,v)); }
     function nudgeInput(targetId, delta){
       let {m,s} = getMS();
       if(targetId === 'minInput'){
-        m = clamp(m + delta, 0, 60);
-        if(m === 60) s = 0;
+        m = clamp(m + delta, 0, 60); if(m === 60) s = 0;
       }else{
         s += delta;
         while(s >= 60 && m < 60){ s -= 60; m = Math.min(60, m+1); }
         while(s < 0 && m > 0){ s += 60; m = Math.max(0, m-1); }
-        if(m === 60) s = 0;
-        s = clamp(s, 0, 59);
+        if(m === 60) s = 0; s = clamp(s, 0, 59);
       }
       setMS(m,s);
     }
 
     function applyFromInputs(forceReset){
-      let {m,s} = getMS();
-      m = clamp(m, 0, 60);
-      s = clamp(s, 0, 59);
-      if(m === 60) s = 0; // 60:00固定
-      setMS(m,s);
-      const sec = clamp(m*60 + s, 1, 3600);
-      setDuration(sec, forceReset);
+      let {m,s} = getMS(); m = clamp(m,0,60); s = clamp(s,0,59); if(m===60) s=0; setMS(m,s);
+      const sec = clamp(m*60 + s, 1, 3600); setDuration(sec, forceReset);
     }
 
     function setDuration(sec, andReset){
@@ -471,8 +493,7 @@
         remainingSec = durationSec;
         visualStartDeg = nowMinuteAngleDeg();
         drawArc(remainingSec, durationSec, visualStartDeg);
-        updateTexts();
-        statusText.textContent = '待機中';
+        updateTexts(); statusText.textContent = '待機中';
       }else{
         const now = performance.now();
         const passed = Math.max(0, (now - startTimeMs)/1000);
@@ -485,13 +506,14 @@
 
     // ===== 針（アニメ） =====
     function renderClock(){
-      const d = new Date();
+      const d = adjustedNow();
       const s = d.getSeconds() + d.getMilliseconds()/1000;
       const m = d.getMinutes() + s/60;
       const h = (d.getHours()%12) + m/60;
       hH.setAttribute('transform', `rotate(${h*30})`);
       hM.setAttribute('transform', `rotate(${m*6})`);
       hS.setAttribute('transform', `rotate(${s*6})`);
+      updateDigital();
       requestAnimationFrame(renderClock);
     }
     requestAnimationFrame(renderClock);
@@ -499,72 +521,52 @@
     // ===== タイマー制御 =====
     btnStart.addEventListener('click', async () => {
       if(running) return;
-      await ensureAudio();
-      await requestWakeLock();
-      running = true;
-      statusText.textContent = 'カウント中…';
+      await ensureAudio(); await requestWakeLock();
+      running = true; statusText.textContent = 'カウント中…';
       startTimeMs = performance.now();
       endTimeMs = startTimeMs + remainingSec*1000;
-      arc.style.display = 'inline';
-      tick();
+      arc.style.display = 'inline'; tick();
     });
-
     btnPause.addEventListener('click', async () => {
       if(!running) return;
-      running = false;
-      cancelAnimationFrame(rafId);
+      running = false; cancelAnimationFrame(rafId);
       remainingSec = Math.max(0, (endTimeMs - performance.now())/1000);
       statusText.textContent = '一時停止';
       drawArc(remainingSec, durationSec, visualStartDeg);
-      updateTexts();
-      await releaseWakeLock();
+      updateTexts(); await releaseWakeLock();
     });
-
     btnReset.addEventListener('click', async () => {
-      running = false;
-      cancelAnimationFrame(rafId);
-      remainingSec = durationSec;
-      visualStartDeg = nowMinuteAngleDeg();
+      running = false; cancelAnimationFrame(rafId);
+      remainingSec = durationSec; visualStartDeg = nowMinuteAngleDeg();
       arc.style.display = durationSec>0 ? 'inline' : 'none';
       drawArc(remainingSec, durationSec, visualStartDeg);
-      statusText.textContent = '待機中';
-      updateTexts();
-      document.getElementById('app').classList.remove('flash');
-      await releaseWakeLock();
+      statusText.textContent = '待機中'; updateTexts();
+      document.getElementById('app').classList.remove('flash'); await releaseWakeLock();
     });
 
     function tick(){
       if(!running) return;
       const now = performance.now();
       remainingSec = Math.max(0, (endTimeMs - now)/1000);
-
-      // 起点＝現在の長針角度 → 長針が進むほど弧が短くなる
       visualStartDeg = nowMinuteAngleDeg();
       drawArc(remainingSec, durationSec, visualStartDeg);
-
       updateTexts();
       if(remainingSec <= 0.001){
-        running = false;
-        statusText.textContent = '時間になりました';
-        doneEffects();
-        releaseWakeLock();
-        return;
+        running = false; statusText.textContent = '時間になりました';
+        doneEffects(); releaseWakeLock(); return;
       }
       rafId = requestAnimationFrame(tick);
     }
 
-    // ===== 弧の描画（startDeg から 残り角ぶん先へ） =====
     function nowMinuteAngleDeg(){
-      const d = new Date();
-      return (d.getMinutes() + d.getSeconds()/60) * 6; // 1分=6度（1秒=0.1度）
+      const d = adjustedNow();
+      return (d.getMinutes() + d.getSeconds()/60) * 6;
     }
     function drawArc(remSec, totalSec, startDeg){
-      const spanDegNow  = Math.max(0.001, Math.min(remSec * 0.1, 359.9)); // 残り秒→残り角
-      const s = startDeg - 90;                 // SVG座標補正
-      const e = startDeg + spanDegNow - 90;    // 起点から“残り角”ぶん先（時計回り）
+      const spanDegNow  = Math.max(0.001, Math.min(remSec * 0.1, 359.9));
+      const s = startDeg - 90; const e = startDeg + spanDegNow - 90;
       const d = describeArc(150,150,132, s, e);
-      arc.setAttribute('d', d);
-      arc.setAttribute('stroke', 'var(--accent)');
+      arc.setAttribute('d', d); arc.setAttribute('stroke', 'var(--accent)');
       arc.style.display = totalSec>0 ? 'inline' : 'none';
     }
     function polarToCartesian(cx,cy,r,deg){
@@ -572,25 +574,21 @@
       return { x: cx + r*Math.cos(rad), y: cy + r*Math.sin(rad) };
     }
     function describeArc(cx,cy,r,startDeg,endDeg){
-      let delta = endDeg - startDeg;
-      const sweep = delta>=0 ? 1 : 0;
-      delta = Math.abs(delta);
-      const large = delta > 180 ? 1 : 0;
+      let delta = endDeg - startDeg; const sweep = delta>=0 ? 1 : 0;
+      delta = Math.abs(delta); const large = delta > 180 ? 1 : 0;
       const s = polarToCartesian(cx,cy,r,startDeg);
       const e = polarToCartesian(cx,cy,r,endDeg);
       return `M ${s.x} ${s.y} A ${r} ${r} 0 ${large} ${sweep} ${e.x} ${e.y}`;
     }
 
-    // ===== 表示 =====
     function fmtRemain(sec){
       sec = Math.max(0, Math.round(sec));
-      const m = Math.floor(sec/60);
-      const s = sec%60;
+      const m = Math.floor(sec/60); const s = sec%60;
       return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
     }
     function fmtEta(sec){
-      const d = new Date(Date.now() + Math.max(0, Math.round(sec))*1000);
-      return d.toLocaleTimeString('ja-JP',{hour:'2-digit', minute:'2-digit'});
+      const d = new Date(Date.now() + offsetMs + Math.max(0, Math.round(sec))*1000);
+      return d.toLocaleTimeString('ja-JP',{hour:'2-digit', minute:'2-digit'}); // ETAは従来通り
     }
     function updateTexts(){
       remainText.textContent = fmtRemain(remainingSec);
@@ -598,7 +596,6 @@
       etaText.textContent = `終了予定時刻 ${fmtEta(base)}`;
     }
 
-    // ===== 完了通知：音＋バイブ＋視覚 =====
     function doneEffects(){
       arc.setAttribute('stroke','var(--done)');
       document.getElementById('app').classList.add('flash');
@@ -606,7 +603,7 @@
       if(navigator.vibrate){ try{ navigator.vibrate([200,100,200]); }catch{} }
     }
 
-    // ===== オーディオ（サウンド切替対応） =====
+    // ===== オーディオ =====
     async function ensureAudio(){
       try{
         if(!audioCtx || audioCtx.state==='closed'){
@@ -616,50 +613,24 @@
         }
       }catch{}
     }
-
     function playAlarm(){
       ensureAudio();
       const mode = soundSelect.value;
-      if(mode === 'file'){
-        if(customBuffer){ playBuffer(customBuffer); }
-        else{ playSynth('pipipi'); }
-      }else{
-        playSynth(mode);
-      }
+      playSynth(mode);
     }
-
-    function playBuffer(buffer){
-      try{
-        const src = audioCtx.createBufferSource();
-        const g = audioCtx.createGain();
-        g.gain.value = 0.9;
-        src.buffer = buffer;
-        src.connect(g).connect(audioCtx.destination);
-        src.start();
-      }catch(e){ console.error(e); }
-    }
-
-    // 簡易シンセ・パターン
     function playSynth(mode){
       try{
-        const t0 = audioCtx.currentTime + 0.01;
-        const master = audioCtx.createGain();
-        master.gain.value = 0.9;
-        master.connect(audioCtx.destination);
-
+        const ctx = audioCtx; if(!ctx) return;
+        const t0 = ctx.currentTime + 0.01;
+        const master = ctx.createGain(); master.gain.value = 0.9; master.connect(ctx.destination);
         const tone = (freq, type, start, dur, vol=0.6, attack=0.01, release=0.15) => {
-          const o = audioCtx.createOscillator();
-          const g = audioCtx.createGain();
-          o.type = type;
-          o.frequency.setValueAtTime(freq, t0 + start);
+          const o = ctx.createOscillator(); const g = ctx.createGain();
+          o.type = type; o.frequency.setValueAtTime(freq, t0 + start);
           g.gain.setValueAtTime(0.0001, t0 + start);
           g.gain.exponentialRampToValueAtTime(vol, t0 + start + attack);
           g.gain.exponentialRampToValueAtTime(0.0001, t0 + start + dur + release);
-          o.connect(g).connect(master);
-          o.start(t0 + start);
-          o.stop(t0 + start + dur + release + 0.02);
+          o.connect(g).connect(master); o.start(t0 + start); o.stop(t0 + start + dur + release + 0.02);
         };
-
         const seq = {
           pipipi: ()=>{ [0,0.25,0.50].forEach((s)=> tone(1000,'square', s, 0.18, 0.55, 0.008, 0.08)); },
           chime:  ()=>{ tone(1568,'sine',0,0.22,0.6,0.01,0.18); tone(1319,'sine',0.24,0.28,0.6,0.01,0.22); },
@@ -667,27 +638,24 @@
           long:   ()=>{ tone(1046.5,'sine',0,1.0,0.6,0.02,0.25); },
           down3:  ()=>{ [1200,900,700].forEach((f,i)=> tone(f,'square', i*0.22, 0.18, 0.5, 0.01, 0.08)); },
         };
-
         (seq[mode] || seq.pipipi)();
       }catch(e){ console.error(e); }
     }
 
-    // ===== 画面スリープ防止（対応端末のみ） =====
+    // ===== 画面スリープ防止 =====
+    let wakeLock = null;
     async function requestWakeLock(){
       try{
         if ('wakeLock' in navigator && !wakeLock){
           wakeLock = await navigator.wakeLock.request('screen');
           wakeLock.addEventListener('release', ()=>{ wakeLock = null; });
         }
-      }catch(e){ /* サポート外なら無視 */ }
+      }catch(e){}
     }
-    async function releaseWakeLock(){
-      try{ await wakeLock?.release(); wakeLock = null; }catch{}
-    }
+    async function releaseWakeLock(){ try{ await wakeLock?.release(); wakeLock = null; }catch{} }
 
     // 初期化
-    applyFromInputs(true);
-    updateTexts();
+    applyFromInputs(true); updateTexts();
   })();
   </script>
 </body>
