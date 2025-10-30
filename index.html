@@ -42,7 +42,14 @@
 
   .clock-pane{ grid-area:clock; display:flex; align-items:center; justify-content:center; }
   .clock-wrap{ display:flex; flex-direction:column; align-items:center; gap:8px }
-  svg#clock{ width:min(var(--clockMaxW),var(--clockMaxH)); height:auto; max-height:var(--clockMaxH) }
+
+  /* ★変更②：時計はカラム幅（100%）と高さ上限（svh）の小さい方に合わせる */
+  svg#clock{
+    display:block;
+    width: min(100%, var(--clockMaxH));
+    height: auto;
+    max-height: var(--clockMaxH);
+  }
 
   /* デジタル時刻（12時間表示） */
   .digital{ display:flex; flex-direction:column; align-items:center; gap:4px; }
@@ -130,7 +137,8 @@
       grid-template-areas:"head" "clock" "side";
       gap:10px;
     }
-    :root{ --clockMaxW: 92vw; --clockMaxH: 56svh }
+    /* ★変更③：92vw を削除して高さ上限のみ */
+    :root{ --clockMaxH: 56svh }
     .side{ padding-bottom:0; gap:10px; }
     .btn.primary{ flex:1 } .btn{ min-width:0 }
     details.sound:not([open]) .sound-body{ display:none }
@@ -148,7 +156,6 @@
     100%{ box-shadow:0 0 0 0 rgba(34,197,94,0) }
   }
 
-
   /* 時刻調整ダイアログ */
   dialog#timeDlg{ border:none; border-radius:14px; padding:14px;
     width:min(92vw, 420px); box-shadow:0 10px 30px rgba(0,0,0,.2); }
@@ -162,6 +169,9 @@
   .dlg-actions{ display:flex; gap:8px; justify-content:flex-end; margin-top:12px }
   .dlg-actions .left{ margin-right:auto }
   .muted{ color:#64748b; font-size:12px; margin:0 }
+
+  /* ★変更①：グリッドの子要素が縮められるように */
+  .clock-pane, .side { min-width: 0; }
 </style>
 </head>
 <body>
@@ -660,3 +670,4 @@
   </script>
 </body>
 </html>
+
