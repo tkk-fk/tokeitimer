@@ -2,695 +2,652 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no" />
 <title>時計タイマー</title>
 <link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --bg:#ffffff; --ink:#0f172a; --muted:#e5e7eb; --accent:#1e90ff; --done:#22c55e;
-    --gap:12px; --card-pad:10px; --btn-fz:18px; --btn-py:10px; --btn-px:16px;
-    --safe-b: env(safe-area-inset-bottom, 0px);
-    --clockMaxH: 60svh;
+  :root {
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --ink: #1e293b;
+    
+    /* 初期カラー（青） */
+    --accent: #2563eb;
+    
+    --stop: #ef4444;
+    --ready: #22c55e;
+    --muted: #94a3b8;
+    --muted2:#64748b;
+
+    --shadow: 0 10px 25px rgba(2,6,23,.08);
+    --shadowUp: 0 -10px 30px rgba(2,6,23,.06);
+
+    --r-xl: 22px;
+    --r-lg: 16px;
+    --r-md: 12px;
+
+    --gap: 14px;
+    --pad: 16px;
+
+    /* iOS Safari 対策 */
+    --appH: calc(var(--vh, 1vh) * 100);
+
+    /* ボタンサイズ */
+    --btnH: 60px;
+    --btnFz: 18px;
+    --btnBigFz: 22px;
+
+    /* 時計最大サイズ */
+    --clockMax: 50svh;
   }
-  *{ box-sizing:border-box }
-  html,body{ height:100% }
+
+  *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; margin:0; }
+
   body{
-    margin:0; background:var(--bg); color:var(--ink);
-    font-family: system-ui,-apple-system,"BIZ UDPGothic","Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
-    -webkit-text-size-adjust:100%;
-    touch-action:manipulation; user-select:none; -webkit-user-select:none;
-    overscroll-behavior:contain;
-    padding-bottom:calc(var(--safe-b) + 4px);
+    font-family: "BIZ UDPGothic", system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    height: var(--appH);
+    min-height: 100svh;
+    overflow: hidden; /* スクロール禁止 */
+    touch-action: manipulation;
+    user-select:none; -webkit-user-select:none;
+    overscroll-behavior: contain;
+    transition: background-color 0.3s;
   }
 
-  /* ===== 1カラムレイアウト ===== */
-  .shell{
-    min-height:100svh;
-    display:flex; flex-direction:column; align-items:center;
-    gap:14px; padding:8px clamp(10px, 2vw, 18px);
+  /* ===== レイアウト ===== */
+  /* PCでも幅を制限し、中央寄せで縦長レイアウトを維持 */
+  .app-shell{
+    height: 100%; 
+    width: 100%;
+    max-width: 560px; /* ★ここを固定してスクリーンショットの比率を維持 */
+    margin: 0 auto; 
+    padding: var(--pad);
+    display:flex; flex-direction:column; gap: var(--gap); 
+    position: relative;
+    background: var(--bg); /* PC背景と馴染ませる */
   }
-  .topbar{ width:100%; max-width:1200px; display:flex; align-items:center; justify-content:space-between; gap:10px }
-  h1{ margin:0; font-size:clamp(18px,3.6vw,26px); letter-spacing:.02em }
 
-  /* シンプル表示トグル */
-  .mode{ display:flex; align-items:center; gap:10px; }
-  .tgl{ display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border:1px solid var(--muted); border-radius:999px; background:#fff; }
-  .tgl input{ width:0; height:0; position:absolute; opacity:0 }
-  .tgl .pill{ position:relative; width:44px; height:24px; border-radius:999px; background:#e5e7eb; }
-  .tgl .pill::after{ content:""; position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,.15); transition:.18s }
-  .tgl input:checked + .pill{ background:var(--accent) }
-  .tgl input:checked + .pill::after{ transform:translateX(20px) }
-  .mode label span{ font-size:14px }
+  /* シンプルモード解除ボタン */
+  #btnExitSimple {
+    display: none; position: absolute; top: 10px; right: 10px; z-index: 100;
+    padding: 8px 16px; background: rgba(255,255,255,0.9);
+    border: 1px solid var(--muted); border-radius: 20px;
+    font-size: 0.85rem; font-weight: 700; color: var(--ink);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer;
+  }
+  body.simple #btnExitSimple { display: block; }
 
-  .clock-pane{ width:100%; display:flex; flex-direction:column; align-items:center; gap:10px }
-  svg#clock{ width:min(86vw, var(--clockMaxH)); height:auto; display:block }
+  header{
+    height: 44px; display:flex; align-items:center; justify-content:space-between; gap: 10px; min-height:0; flex-shrink: 0;
+  }
 
-  /* 操作ボタン（時計の直下） */
-  .ctrl{ display:flex; gap:10px; justify-content:center; align-items:center; flex-wrap:wrap }
+  .title{ display:flex; align-items:baseline; gap:10px; min-width:0; }
+  h1{ margin:0; font-size: 1.1rem; color: var(--muted2); letter-spacing:.02em; white-space:nowrap; }
+  .sub{ font-size:.85rem; color: var(--muted); white-space:nowrap; }
+
+  .header-right{ display:flex; align-items:center; gap: 10px; }
+  
+  .toggle{ display:flex; align-items:center; gap:8px; font-size:.95rem; color: var(--muted2); cursor: pointer; }
+  .toggle input{ width: 18px; height: 18px; accent-color: var(--accent); }
+
+  .iconBtn{
+    border: none; background: var(--card); box-shadow: 0 4px 10px rgba(2,6,23,.06);
+    border-radius: 999px; height: 36px; padding: 0 12px;
+    display:flex; align-items:center; gap:8px; cursor:pointer;
+    font-weight:700; color: var(--ink); font-size: 0.85rem;
+  }
+  .iconBtn:active{ transform: scale(.98); }
+
+  /* コンテンツレイアウト（常に縦並び） */
+  .layout{
+    flex: 1; min-height:0;
+    display:flex; flex-direction: column;
+    gap: var(--gap);
+  }
+
+  /* ===== 時計エリア ===== */
+  .clock-area{
+    flex: 1; /* 余白をすべて時計エリアに使う */
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    gap: 10px; min-height: 0;
+  }
+
+  svg#clock{
+    width:auto; 
+    height: auto; 
+    max-height: 100%; 
+    max-width: 100%;
+    aspect-ratio: 1/1; 
+    filter: drop-shadow(0 10px 20px rgba(2,6,23,0.1));
+  }
+  /* 扇形の色 */
+  #timerArc { fill: var(--accent); opacity: 0.15; transition: fill 0.3s; }
+  #timerLine { stroke: var(--accent); transition: stroke 0.3s; }
+
+  .timer-display{ text-align:center; display:grid; gap: 0; margin-top: -10px; }
+  .remain{
+    font-size: clamp(40px, 8vh, 64px); font-weight: 900;
+    font-variant-numeric: tabular-nums; line-height: 1.1; letter-spacing: 0.02em;
+  }
+  .eta{ font-size: 1rem; color: var(--muted2); font-weight:700; }
+  .status{ font-size: 0.8rem; color: #94a3b8; font-weight:700; margin-top:2px; }
+
+  /* 終了時アニメーション */
+  @keyframes blink { 50% { opacity: 0.45; } }
+  .finished{ animation: blink .65s step-end infinite; color: var(--stop) !important; }
+
+  /* ===== 操作パネル ===== */
+  .panel{
+    background: var(--card); border-radius: var(--r-xl); padding: 16px;
+    box-shadow: var(--shadowUp); 
+    display:flex; flex-direction:column; gap: 14px;
+    flex-shrink: 0; /* パネルは縮めない */
+  }
+
+  .main-btns{ display:grid; grid-template-columns: 2fr 1.2fr 1.2fr; gap: 12px; }
   .btn{
-    padding:var(--btn-py) var(--btn-px);
-    border-radius:12px; border:1px solid var(--muted);
-    background:#fff; font-size:var(--btn-fz); cursor:pointer;
-    box-shadow:0 1px 2px rgba(0,0,0,.05); min-height:46px; min-width:110px;
+    border: none; border-radius: var(--r-lg); font-weight: 900; font-size: var(--btnFz);
+    cursor: pointer; display:flex; align-items:center; justify-content:center;
+    transition: transform .08s ease; height: var(--btnH);
+    box-shadow: 0 4px 10px rgba(2,6,23,.05);
   }
-  .btn.primary{ background:var(--accent); color:#fff; border-color:var(--accent) }
-  .btn:active{ transform:translateY(1px) }
+  .btn:active{ transform: scale(0.97); }
+  
+  .btn-start{ background: var(--ready); color: #fff; font-size: var(--btnBigFz); }
+  .btn-pause{ background: #e2e8f0; color: var(--ink); }
+  .btn-reset{ background: #fff; color: var(--stop); border: 2px solid #fee2e2; box-shadow: none; }
 
-  /* 下部コンテンツ */
-  .stack{ width:min(1100px, 96vw); display:flex; flex-direction:column; gap:10px; }
-  .card{ padding:var(--card-pad); border:1px solid var(--muted); border-radius:14px; background:#fff; }
-
-  .panel{ display:grid; gap:6px; text-align:center }
-  .remain{ font-weight:800; font-size:clamp(24px,4.8vw,40px); letter-spacing:.02em; line-height:1 }
-  .eta{ font-size:clamp(12px,2.4vw,14px); opacity:.9 }
-  .status{ font-size:12px; color:#64748b }
-
-  /* 設定3ボックス（通常は3列、狭い時は自動で折返し） */
-  .settings-row{
-    display:grid; gap:10px;
-    grid-template-columns: 1fr 1fr 1fr;
+  /* 設定グリッド */
+  .settings-grid{
+    display:grid; grid-template-columns: 1fr 1fr; gap: 12px;
   }
-  @media (max-width: 980px){
-    .settings-row{ grid-template-columns: 1fr 1fr; }
-  }
-  @media (max-width: 640px){
-    .settings-row{ grid-template-columns: 1fr; }
+  .card-time { grid-column: 1 / -1; }
+
+  .setting-card{
+    background: #f1f5f9; border-radius: var(--r-md); padding: 8px 12px;
+    display:flex; align-items:center; justify-content:space-between; gap: 10px;
+    height: 60px;
   }
 
-  /* タイマー（分・秒） */
-  .numeric{ display:grid; gap:8px }
-  .card-title{ margin:.2em 0 .2em; font-size:16px; font-weight:700 }
-  .num-grid{
-    display:grid; grid-template-columns: 1fr auto 1fr auto;
-    gap:8px; align-items:center; justify-content:center;
-  }
-  .field{ display:flex; align-items:center; gap:8px; justify-content:center }
-  .label{ font-weight:700; min-width:2.5em; text-align:center }
-  .inputWrap{ display:flex; align-items:center; gap:6px }
-  input[type="number"]{
-    width:7ch; padding:8px; font-size:18px; text-align:center;
-    border-radius:12px; border:1px solid var(--muted); background:#f9fafb;
-    appearance:textfield; -moz-appearance:textfield;
-  }
-  input[type="number"]::-webkit-outer-spin-button,
-  input[type="number"]::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0 }
-  .arrows{ display:flex; flex-direction:column; gap:4px }
-  .btn-arrow{
-    width:38px; height:32px; border-radius:10px; font-weight:700;
-    border:1px solid var(--muted); background:#fff; cursor:pointer;
-    box-shadow:0 1px 2px rgba(0,0,0,.05);
-  }
-  .hint{ margin:0; text-align:center; font-size:12px; color:#6b7280 }
+  .setting-title{ font-weight:900; color: var(--muted2); font-size: 0.9rem; white-space:nowrap; }
 
-  /* サウンド */
-  details.sound > summary{
-    list-style:none; user-select:none; -webkit-user-select:none; cursor:pointer;
-    font-weight:700; display:flex; align-items:center; justify-content:space-between;
-    gap:10px; padding:8px 10px; border-radius:10px; border:1px solid var(--muted);
-    background:#fff;
-  }
-  details.sound[open] > summary{ border-bottom-left-radius:8px; border-bottom-right-radius:8px }
-  .sound-body{ padding:8px 0 0 }
-  .sound-row{ display:grid; grid-template-columns: 1fr auto; gap:8px; align-items:center }
-  .sound select{ width:100%; padding:8px; font-size:16px; border:1px solid var(--muted); border-radius:10px; background:#f9fafb; }
-  #soundName{ opacity:.75 }
+  .input-stack{ display:flex; gap: 12px; align-items:center; justify-content: flex-end; width: 100%; }
+  .input-row{ display:flex; align-items:center; gap: 8px; }
 
-  /* 時刻設定（補正） */
-  .timefix h3{ margin:.2em 0 .4em; font-size:16px }
-  .offset-line{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
-  .muted{ color:#64748b; font-size:12px; margin:0 }
-
-  /* 低い画面向けさらにコンパクト化 */
-  @media (max-height:760px){
-    :root{ --clockMaxH: 56svh }
-    .btn{ --btn-fz:16px }
+  /* 数字入力欄 */
+  .num{
+    width: 60px; height: 44px; text-align:center; font-size: 1.4rem; font-weight: 900;
+    border: 2px solid var(--accent); border-radius: 10px; background: #fff; color: var(--ink);
+    transition: border-color 0.3s;
+    appearance: none; -webkit-appearance: none;
   }
-  @media (max-height:640px){
-    :root{ --clockMaxH: 52svh }
-    .remain{ font-size:clamp(22px,4.2vw,34px) }
+  
+  .step-btn{
+    width: 40px; height: 40px; border-radius: 50%; border: none;
+    background: var(--accent); color: #fff; font-size: 1.4rem; font-weight: 900;
+    cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    transition: background-color 0.3s;
+    display:flex; align-items:center; justify-content:center; padding-bottom:4px;
+  }
+  .step-btn:active{ transform: scale(0.95); }
+
+  /* 音選択 */
+  select{
+    height: 40px; padding: 0 10px; border-radius: 10px; border: 1px solid #cbd5e1;
+    background:#fff; font-size: 0.95rem; font-weight:700; color: var(--ink); width: 100%;
   }
 
-  .flash{ animation:flash .9s ease-out 2 }
-  @keyframes flash{
-    0%{ box-shadow:0 0 0 0 rgba(34,197,94,.0) }
-    50%{ box-shadow:0 0 0 12px rgba(34,197,94,.25) }
-    100%{ box-shadow:0 0 0 0 rgba(34,197,94,0) }
+  /* カラーピッカー */
+  .color-dots { display: flex; gap: 10px; }
+  .dot {
+    width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
+    border: 2px solid transparent; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
   }
+  .dot.active { border-color: #fff; outline: 2px solid var(--ink); transform:scale(1.1); }
 
-  /* ===== 授業モード：初期ON（視認性重視のコンパクトUI）===== */
-  body.lesson svg#clock{ width:min(90vw, 66svh) } /* 少し拡大 */
-  /* 設定3ボックスを“1段”に（可能な幅では折返しなし） */
-  body.lesson .settings-row{ display:flex; align-items:center; gap:10px; flex-wrap:nowrap; overflow-x:auto; }
-  body.lesson .card{ padding:8px 10px; }
-  /* タイマアー内部も1段に（分・秒・矢印を横一直線） */
-  body.lesson .numeric .num-grid{
-    display:grid; grid-auto-flow:column; grid-auto-columns:max-content; gap:8px;
-    grid-template-columns: repeat(6, max-content); /* 分: ラベル,入力,矢印 / 秒: ラベル,入力,矢印 */
-    justify-content:flex-start;
-  }
-  body.lesson .numeric .label{ min-width:auto; font-size:16px }
-  body.lesson input[type="number"]{ width:6ch; padding:6px; font-size:16px }
-  body.lesson .btn-arrow{ width:34px; height:30px }
+  /* 実行中は設定を触れない */
+  body.is-running .settings-grid{ opacity:.5; pointer-events:none; filter: grayscale(10%); }
 
-  /* ===== シンプル表示：時計＋「あと◯◯」のみ ===== */
-  .remain-simple{
-    display:none; margin-top:6px; font-weight:900; letter-spacing:.02em;
-    font-size:clamp(28px,6.2vw,48px); text-align:center;
+  /* ===== シンプル表示 ===== */
+  body.simple .settings-grid { display:none; }
+  body.simple .sub, body.simple .header-right { display:none; }
+  body.simple .clock-area { justify-content: center; }
+  body.simple svg#clock{ max-height: 65svh; }
+  body.simple .eta{ display:none; }
+  body.simple .status{ display:none; }
+  body.simple .panel{ background: transparent; box-shadow: none; padding:0; }
+  body.simple .main-btns { display: none; } 
+
+  /* ===== ダイアログ ===== */
+  dialog{
+    border:none; border-radius: 18px; padding: 16px;
+    width: min(92vw, 420px); box-shadow: 0 20px 60px rgba(2,6,23,.25);
   }
-  body.simple .ctrl,
-  body.simple .stack{ display:none !important }
-  body.simple .remain-simple{ display:block }
-  /* シンプル時も上部バーは残す（切替用） */
+  dialog::backdrop{ background: rgba(2,6,23,.35); }
+  .dlgTitle{ margin: 0 0 6px; font-size: 1.1rem; font-weight: 900; }
+  .dlgMuted{ margin: 0 0 12px; color: var(--muted2); font-size: .9rem; }
+  .badgeRow{ display:flex; flex-wrap:wrap; gap: 8px; justify-content:flex-end; margin-top:10px; }
+  .badge{
+    border:none; background:#e2e8f0; border-radius: 999px; padding: 8px 12px;
+    font-weight: 900; cursor:pointer;
+  }
+  .dlgActions{ display:flex; justify-content:flex-end; gap: 8px; margin-top: 16px; }
+  .btn-mini{
+    height: 40px; padding: 0 14px; border-radius: 10px; border: none;
+    background:#e2e8f0; font-weight: 900; cursor:pointer;
+  }
 </style>
 </head>
-<body class="lesson"><!-- 既定で授業モードON -->
-  <div class="shell" id="app">
-    <header class="topbar">
-      <h1>時計タイマー</h1>
-      <div class="mode" aria-label="シンプル表示切替">
-        <label class="tgl">
-          <input type="checkbox" id="simpleToggle" />
-          <span class="pill" aria-hidden="true"></span>
-        </label>
-        <label for="simpleToggle"><span>シンプル表示（時計＋あと何分）</span></label>
-      </div>
-    </header>
 
-    <section class="clock-pane">
+<body>
+<div class="app-shell" id="app">
+  <button id="btnExitSimple" type="button">⚙ 設定を出す</button>
+
+  <header>
+    <div class="title">
+      <h1>時計タイマー</h1>
+      <div class="sub" id="offsetHint">補正：0秒</div>
+    </div>
+
+    <div class="header-right">
+      <label class="toggle" title="時計と残り時間だけの表示にします">
+        <input type="checkbox" id="simpleToggle" />
+        <span>シンプル表示</span>
+      </label>
+
+      <button class="iconBtn" id="btnOpenTimeDlg" type="button" aria-label="時刻合わせ">
+        ⏱ 時刻合わせ
+      </button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <main class="clock-area">
       <svg id="clock" viewBox="0 0 300 300" role="img" aria-label="アナログ時計">
         <defs>
           <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-            <feDropShadow dx="0" dy="1" stdDeviation="1" flood-color="#000" flood-opacity=".22"/>
+            <feDropShadow dx="0" dy="1" stdDeviation="1" flood-color="#000" flood-opacity=".15"/>
           </filter>
         </defs>
-        <circle cx="150" cy="150" r="140" fill="#fff" stroke="#d8dde3" stroke-width="2"/>
-        <g id="ticks"></g><g id="nums"></g>
-        <circle cx="150" cy="150" r="132" fill="none" stroke="#eef2f7" stroke-width="8"/>
-        <path id="timerArc" d="" fill="none" stroke="var(--accent)" stroke-width="10"
-              stroke-linecap="round" filter="url(#shadow)" style="display:none"/>
+        <circle cx="150" cy="150" r="145" fill="#fff" stroke="#cbd5e1" stroke-width="2"/>
+        <g id="ticks"></g>
+        <g id="nums"></g>
+        <path id="timerArc" d=""></path>
+        <path id="timerLine" d="" fill="none" stroke-width="10" stroke-linecap="round" filter="url(#shadow)"></path>
         <g id="hands" transform="translate(150,150)">
-          <line id="hand-hour"   x1="0" y1="12" x2="0" y2="-70"  stroke="#0f172a" stroke-width="6" stroke-linecap="round"/>
-          <line id="hand-minute" x1="0" y1="14" x2="0" y2="-110" stroke="#0f172a" stroke-width="4" stroke-linecap="round"/>
-          <line id="hand-sec"    x1="0" y1="16" x2="0" y2="-120" stroke="#ef4444"  stroke-width="2" stroke-linecap="round"/>
-          <circle cx="0" cy="0" r="5" fill="#0f172a"/>
+          <line id="hand-hour"   x1="0" y1="12" x2="0" y2="-66"  stroke="#1e293b" stroke-width="8" stroke-linecap="round"/>
+          <line id="hand-minute" x1="0" y1="14" x2="0" y2="-108" stroke="#1e293b" stroke-width="5" stroke-linecap="round"/>
+          <line id="hand-sec"    x1="0" y1="16" x2="0" y2="-118" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="0" cy="0" r="6" fill="#1e293b"/>
         </g>
       </svg>
 
-      <!-- シンプル表示時の大きな残り時間 -->
-      <div class="remain-simple" id="remainSimple">あと --:--</div>
+      <div class="timer-display">
+        <div id="remainText" class="remain">--:--</div>
+        <div id="etaText" class="eta">終了予定：--:--</div>
+        <div id="statusText" class="status">待機中</div>
+      </div>
+    </main>
 
-      <!-- 時計直下：操作ボタン -->
-      <div class="ctrl" id="ctrlBar">
-        <button class="btn primary" id="btnStart">開始</button>
-        <button class="btn" id="btnPause">一時停止</button>
-        <button class="btn" id="btnReset">リセット</button>
+    <footer class="panel">
+      <div class="main-btns">
+        <button id="btnStart" class="btn btn-start">スタート</button>
+        <button id="btnPause" class="btn btn-pause">ストップ</button>
+        <button id="btnReset" class="btn btn-reset">リセット</button>
       </div>
 
-      <!-- 下段：情報＋設定 -->
-      <div class="stack">
-        <div class="panel card">
-          <div class="remain" id="remainText">--:--</div>
-          <div class="eta" id="etaText">終了予定時刻 --:--</div>
-          <div class="status" id="statusText" aria-live="polite">待機中</div>
+      <div class="settings-grid">
+        <div class="setting-card card-time">
+          <div class="setting-title">じかん</div>
+          <div class="input-stack">
+            <div class="input-row">
+              <button class="step-btn" id="minDown">−</button>
+              <input type="text" inputmode="numeric" id="minInput" class="num" value="5" readonly>
+              <span style="font-weight:bold; font-size:0.9rem">分</span>
+              <button class="step-btn" id="minUp">＋</button>
+            </div>
+            <div class="input-row" style="margin-left:10px;">
+              <button class="step-btn" id="secDown">−</button>
+              <input type="text" inputmode="numeric" id="secInput" class="num" value="0" readonly>
+              <span style="font-weight:bold; font-size:0.9rem">秒</span>
+              <button class="step-btn" id="secUp">＋</button>
+            </div>
+          </div>
         </div>
 
-        <div class="settings-row">
-          <!-- タイマアー（分・秒） -->
-          <div class="numeric card" aria-label="時間設定（数字入力＋矢印・即時反映）">
-            <h3 class="card-title">タイマー</h3>
-            <div class="num-grid">
-              <div class="field">
-                <span class="label">分</span>
-                <div class="inputWrap">
-                  <input id="minInput" type="number" min="0" max="60" step="1" value="5" inputmode="numeric" aria-label="分">
-                  <div class="arrows" data-for="minInput">
-                    <button class="btn-arrow up" type="button" aria-label="分を増やす">▲</button>
-                    <button class="btn-arrow down" type="button" aria-label="分を減らす">▼</button>
-                  </div>
-                </div>
-              </div>
-              <div class="field">
-                <span class="label">秒</span>
-                <div class="inputWrap">
-                  <input id="secInput" type="number" min="0" max="59" step="1" value="0" inputmode="numeric" aria-label="秒">
-                  <div class="arrows" data-for="secInput">
-                    <button class="btn-arrow up" type="button" aria-label="秒を増やす">▲</button>
-                    <button class="btn-arrow down" type="button" aria-label="秒を減らす">▼</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <p class="hint">数字/矢印で即時反映（最大60分）</p>
+        <div class="setting-card">
+          <div class="setting-title">いろ</div>
+          <div class="color-dots" id="colorDots">
+            <div class="dot active" style="background:#2563eb" data-color="#2563eb"></div>
+            <div class="dot" style="background:#22c55e" data-color="#22c55e"></div>
+            <div class="dot" style="background:#ef4444" data-color="#ef4444"></div>
+            <div class="dot" style="background:#f97316" data-color="#f97316"></div>
           </div>
+        </div>
 
-          <!-- アラーム -->
-          <details id="soundBox" class="sound card" aria-label="アラーム音の設定">
-            <summary>🔔 アラーム音 <span id="soundName">（ピピピ）</span></summary>
-            <div class="sound-body">
-              <div class="sound-row">
-                <select id="soundSelect" aria-label="サウンドを選択">
-                  <option value="pipipi" selected>ピピピ（短3回）</option>
-                  <option value="chime">チャイム（高→低 2音）</option>
-                  <option value="bell">ベル（トライアングル風）</option>
-                  <option value="long">のびるビープ</option>
-                  <option value="down3">下降3音</option>
-                </select>
-                <button class="btn" id="btnPreview" type="button">試聴</button>
-              </div>
-            </div>
-          </details>
-
-          <!-- 時刻設定（補正） -->
-          <div class="timefix card" aria-label="時刻設定（教室の時計と合わせる）">
-            <h3>時刻設定</h3>
-            <div class="offset-line">
-              <span class="muted">現在の補正：</span>
-              <strong id="currentOffsetText">±0分0秒</strong>
-            </div>
-            <div class="ctrl" style="margin-top:6px">
-              <button class="btn" id="btnOpenTimeDlg" type="button">時刻を合わせる</button>
-            </div>
-            <p class="muted">※ 補正は端末に保存されます</p>
+        <div class="setting-card">
+          <div class="setting-title">おと</div>
+          <div style="flex:1; display:flex; gap:8px;">
+            <select id="soundSelect">
+              <option value="pipipi" selected>ピピピ</option>
+              <option value="chime">チャイム</option>
+              <option value="bell">ベル</option>
+            </select>
+            <button class="btn-mini" id="btnPreview">試聴</button>
           </div>
         </div>
       </div>
-    </section>
+    </footer>
   </div>
+</div>
 
-  <!-- 時刻調整ダイアログ -->
-  <dialog id="timeDlg" aria-labelledby="dlgTitle">
-    <h3 class="dlg-title" id="dlgTitle">時計の時刻調整</h3>
-    <p class="muted">教室の壁掛け時計とずれているときに使います。補正は端末に保存されます。</p>
+<dialog id="timeDlg">
+  <div class="dlgTitle">時刻合わせ</div>
+  <p class="dlgMuted">教室の時計とズレている場合に使います。</p>
+  <div style="display:flex; align-items:center; gap:10px;">
+    <input id="timeInput" type="time" style="font-size:1.2rem; padding:8px; border-radius:8px; border:1px solid #ccc;">
+    <div style="font-weight:bold;">現在：<span id="offsetText">±0分</span></div>
+  </div>
+  <div class="badgeRow">
+    <button class="badge" data-d="-60000">-1分</button>
+    <button class="badge" data-d="-10000">-10秒</button>
+    <button class="badge" data-d="10000">+10秒</button>
+    <button class="badge" data-d="60000">+1分</button>
+  </div>
+  <div class="dlgActions">
+    <button class="btn-mini" id="btnResetOffset">リセット</button>
+    <button class="btn-mini" id="btnSaveOffset" style="background:var(--accent); color:#fff;">決定</button>
+  </div>
+</dialog>
 
-    <div class="dlg-row" style="display:grid; grid-template-columns: 1fr auto; align-items:center; gap:10px; margin:10px 0">
-      <label for="timeInput">表示したい時刻</label>
-      <input id="timeInput" type="time" step="60" aria-label="表示したい時刻（分単位）">
-    </div>
+<script>
+(() => {
+  /* ===== レイアウト調整 ===== */
+  const setVH = () => document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
+  setVH(); window.addEventListener('resize', setVH);
 
-    <div class="offset-line" style="margin:8px 0; display:flex; align-items:center; justify-content:space-between; gap:10px;">
-      <div>現在の補正：<strong id="offsetText">±0分0秒</strong></div>
-      <div class="offset-badges" style="display:flex; flex-wrap:wrap; gap:6px">
-        <button type="button" class="badge" data-d="-300000">-5分</button>
-        <button type="button" class="badge" data-d="-60000">-1分</button>
-        <button type="button" class="badge" data-d="-10000">-10秒</button>
-        <button type="button" class="badge" data-d="10000">+10秒</button>
-        <button type="button" class="badge" data-d="60000">+1分</button>
-        <button type="button" class="badge" data-d="300000">+5分</button>
-      </div>
-    </div>
+  /* ===== 要素参照 ===== */
+  const el = (id) => document.getElementById(id);
+  const arcFill = el('timerArc');
+  const arcLine = el('timerLine');
+  const hH = el('hand-hour');
+  const hM = el('hand-minute');
+  const hS = el('hand-sec');
+  const remainText = el('remainText');
+  const etaText = el('etaText');
+  const statusText = el('statusText');
+  const minInput = el('minInput');
+  const secInput = el('secInput');
+  const soundSelect = el('soundSelect');
 
-    <div class="dlg-actions" style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px">
-      <button type="button" class="btn left" id="btnResetOffset">リセット</button>
-      <button type="button" class="btn" id="btnCancelDlg">キャンセル</button>
-      <button type="button" class="btn primary" id="btnSaveOffset">保存</button>
-    </div>
-  </dialog>
+  /* ===== 設定値 ===== */
+  let durationSec = 300;
+  let remainingSec = 300;
+  let running = false;
+  let endTime = 0;
+  let rafId = 0;
+  let offsetMs = Number(localStorage.getItem('ut_offset') || 0);
 
-  <style>
-    /* ダイアログ/バッジ共通（上で使うので下段で定義） */
-    dialog#timeDlg{ border:none; border-radius:14px; padding:14px; width:min(92vw, 420px); box-shadow:0 10px 30px rgba(0,0,0,.2); }
-    #timeDlg::backdrop{ background:rgba(0,0,0,.25) }
-    .badge{ padding:6px 10px; border:1px solid var(--muted); border-radius:10px; background:#fff; cursor:pointer; }
-  </style>
+  /* ===== 時計描画 (目盛り) ===== */
+  const ticksG = el('ticks');
+  const numsG = el('nums');
+  for (let i=0; i<60; i++){
+    const a = (i/60)*2*Math.PI;
+    const is5 = i%5===0;
+    const r1 = 145, r2 = is5 ? 124 : 135;
+    const line = document.createElementNS("http://www.w3.org/2000/svg","line");
+    line.setAttribute("x1", 150 + Math.sin(a)*r2);
+    line.setAttribute("y1", 150 - Math.cos(a)*r2);
+    line.setAttribute("x2", 150 + Math.sin(a)*r1);
+    line.setAttribute("y2", 150 - Math.cos(a)*r1);
+    line.setAttribute("stroke", is5 ? "#64748b" : "#cbd5e1");
+    line.setAttribute("stroke-width", is5?3:1);
+    ticksG.appendChild(line);
+  }
+  for(let h=1; h<=12; h++){
+    const a = (h/12)*2*Math.PI;
+    const txt = document.createElementNS("http://www.w3.org/2000/svg","text");
+    txt.setAttribute("x", 150 + Math.sin(a)*108);
+    txt.setAttribute("y", 150 - Math.cos(a)*108 + 6);
+    txt.setAttribute("text-anchor", "middle");
+    txt.setAttribute("font-size", "18");
+    txt.setAttribute("font-weight", "900");
+    txt.setAttribute("fill", "#334155");
+    txt.textContent = h;
+    numsG.appendChild(txt);
+  }
 
-  <script>
-  (() => {
-    // ===== ズーム抑止 =====
-    let lastTouchEnd = 0;
-    document.addEventListener('dblclick', e => e.preventDefault(), {passive:false});
-    document.addEventListener('touchend', e => {
-      const now = Date.now();
-      if (now - lastTouchEnd <= 300) e.preventDefault();
-      lastTouchEnd = now;
-    }, {passive:false});
-
-    // ===== 参照 =====
-    const ticksG = document.getElementById('ticks');
-    const numsG  = document.getElementById('nums');
-    const hH = document.getElementById('hand-hour');
-    const hM = document.getElementById('hand-minute');
-    const hS = document.getElementById('hand-sec');
-    const arc = document.getElementById('timerArc');
-
-    const remainText = document.getElementById('remainText');
-    const remainSimple = document.getElementById('remainSimple');
-    const etaText = document.getElementById('etaText');
-    const statusText = document.getElementById('statusText');
-
-    const btnStart = document.getElementById('btnStart');
-    const btnPause = document.getElementById('btnPause');
-    const btnReset = document.getElementById('btnReset');
-
-    const minInput = document.getElementById('minInput');
-    const secInput = document.getElementById('secInput');
-
-    const soundBox    = document.getElementById('soundBox');
-    const soundSelect = document.getElementById('soundSelect');
-    const btnPreview  = document.getElementById('btnPreview');
-    const soundName   = document.getElementById('soundName');
-
-    const timeDlg     = document.getElementById('timeDlg');
-    const timeInput   = document.getElementById('timeInput');
-    const offsetText  = document.getElementById('offsetText');
-    const currentOffsetText = document.getElementById('currentOffsetText');
-    const btnResetOffset = document.getElementById('btnResetOffset');
-    const btnSaveOffset  = document.getElementById('btnSaveOffset');
-    const btnCancelDlg   = document.getElementById('btnCancelDlg');
-    const btnOpenTimeDlg = document.getElementById('btnOpenTimeDlg');
-
-    const simpleToggle = document.getElementById('simpleToggle');
-
-    // ===== 時計補正（オフセット） =====
-    let offsetMs = Number(localStorage.getItem('clockOffsetMs') || 0);
-    let offsetMsBeforeOpen = offsetMs;
-
-    const SOUND_LABELS = { pipipi:'ピピピ', chime:'チャイム', bell:'ベル', long:'のびるビープ', down3:'下降3音', file:'カスタム' };
-    function updateSoundName(){ soundName.textContent = `（${SOUND_LABELS[soundSelect.value]||'ピピピ'}）`; }
-    updateSoundName();
-    soundSelect.addEventListener('change', updateSoundName);
-    btnPreview.addEventListener('click', () => { playAlarm(); });
-
-    // 目盛り＆数字
-    for (let i=0;i<60;i++){
-      const a = (i/60)*2*Math.PI;
-      const outer = 138;
-      const inner = i%5===0 ? 124 : 130;
-      const x1 = 150 + Math.sin(a)*inner, y1 = 150 - Math.cos(a)*inner;
-      const x2 = 150 + Math.sin(a)*outer, y2 = 150 - Math.cos(a)*outer;
-      const line = document.createElementNS("http://www.w3.org/2000/svg","line");
-      line.setAttribute("x1",x1); line.setAttribute("y1",y1);
-      line.setAttribute("x2",x2); line.setAttribute("y2",y2);
-      line.setAttribute("stroke", i%5===0 ? "#9aa3ae" : "#c8ced6");
-      line.setAttribute("stroke-width", i%5===0 ? 2.2 : 1);
-      ticksG.appendChild(line);
-    }
-    for (let h=1;h<=12;h++){
-      const a = (h/12)*2*Math.PI, r = 112;
-      const x = 150 + Math.sin(a)*r, y = 150 - Math.cos(a)*r + 5;
-      const t = document.createElementNS("http://www.w3.org/2000/svg","text");
-      t.setAttribute("x",x); t.setAttribute("y",y);
-      t.setAttribute("text-anchor","middle"); t.setAttribute("font-size","16");
-      t.setAttribute("font-weight","700"); t.textContent = h;
-      numsG.appendChild(t);
-    }
-
-    // ===== 状態 =====
-    let durationSec = 5 * 60;
-    let remainingSec = durationSec;
-    let running = false;
-    let startTimeMs = 0;
-    let endTimeMs = 0;
-    let visualStartDeg = nowMinuteAngleDeg();
-
-    let rafId = 0;
-    let audioCtx = null;
-
-    // ワイド画面ではアラーム設定を開いた状態で開始
-    if (window.matchMedia('(min-width: 921px)').matches) {
-      soundBox.setAttribute('open','');
-    }
-
-    // ===== 授業モードは既定ON（bodyに .lesson を持たせている） =====
-
-    // ===== シンプル表示トグル =====
-    const savedSimple = localStorage.getItem('simpleMode') === '1';
-    simpleToggle.checked = savedSimple;
-    applySimple(savedSimple);
-    simpleToggle.addEventListener('change', e => {
-      const on = e.target.checked;
-      applySimple(on);
-      localStorage.setItem('simpleMode', on ? '1' : '0');
-    });
-    function applySimple(on){
-      document.body.classList.toggle('simple', on);
-    }
-
-    // ===== ユーティリティ =====
-    function adjustedNow(){ return new Date(Date.now() + offsetMs); }
-    function fmtOffset(ms){
-      const sign = ms>=0 ? '+' : '−';
-      const a = Math.abs(ms); const m = Math.floor(a/60000);
-      const s = Math.floor((a%60000)/1000);
-      return `${sign}${m}分${s}秒`;
-    }
-    function syncOffsetTexts(){
-      const txt = fmtOffset(offsetMs);
-      offsetText.textContent = txt;
-      currentOffsetText.textContent = txt;
-    }
-    syncOffsetTexts();
-
-    // 時刻調整UI
-    btnOpenTimeDlg.addEventListener('click', ()=>{
-      offsetMsBeforeOpen = offsetMs;
-      const d = adjustedNow();
-      timeInput.value = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-      syncOffsetTexts();
-      timeDlg.showModal();
-    });
-    timeDlg.querySelectorAll('.badge').forEach(b=>{
-      b.addEventListener('click', ()=>{
-        offsetMs += Number(b.dataset.d||0);
-        localStorage.setItem('clockOffsetMs', String(offsetMs));
-        const d = adjustedNow();
-        timeInput.value = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-        syncOffsetTexts();
-      });
-    });
-    timeInput.addEventListener('change', ()=>{
-      const now = new Date();
-      const [hh,mm] = (timeInput.value || '00:00').split(':').map(n=>parseInt(n||'0',10));
-      const target = new Date(now);
-      target.setHours(hh, mm, now.getSeconds(), now.getMilliseconds());
-      offsetMs = target.getTime() - now.getTime();
-      syncOffsetTexts();
-    });
-    btnResetOffset.addEventListener('click', ()=>{
-      offsetMs = 0; syncOffsetTexts();
-      const d = adjustedNow();
-      timeInput.value = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-    });
-    btnCancelDlg.addEventListener('click', ()=>{ offsetMs = offsetMsBeforeOpen; syncOffsetTexts(); timeDlg.close(); });
-    btnSaveOffset.addEventListener('click', ()=>{ localStorage.setItem('clockOffsetMs', String(offsetMs)); timeDlg.close(); });
-
-    // ===== 分・秒入力 =====
-    [minInput, secInput].forEach(el => {
-      el.addEventListener('input', () => applyFromInputs(false));
-      el.addEventListener('change', () => applyFromInputs(false));
-    });
-    document.querySelectorAll('.arrows').forEach(group => {
-      const targetId = group.dataset.for;
-      const upBtn = group.querySelector('.up');
-      const downBtn = group.querySelector('.down');
-      attachHold(upBtn,  targetId, +1);
-      attachHold(downBtn,targetId, -1);
-    });
-    function attachHold(btn, targetId, delta){
-      let holdTo = null, holdIv = null;
-      const step = () => { nudgeInput(targetId, delta); applyFromInputs(false); };
-      const start = (e) => {
-        e.preventDefault(); step();
-        clearTimeout(holdTo); clearInterval(holdIv);
-        holdTo = setTimeout(() => { holdIv = setInterval(step, 60); }, 300);
-      };
-      const end = () => { clearTimeout(holdTo); clearInterval(holdIv); };
-      btn.addEventListener('mousedown', start);
-      btn.addEventListener('touchstart', start, {passive:false});
-      ['mouseup','mouseleave','touchend','touchcancel'].forEach(ev => btn.addEventListener(ev, end));
-    }
-
-    function getMS(){ let m = parseInt(minInput.value,10)||0; let s = parseInt(secInput.value,10)||0; return {m,s}; }
-    function setMS(m,s){ minInput.value = m; secInput.value = s; }
-    function clamp(v,min,max){ return Math.min(max, Math.max(min,v)); }
-    function nudgeInput(targetId, delta){
-      let {m,s} = getMS();
-      if(targetId === 'minInput'){
-        m = clamp(m + delta, 0, 60); if(m === 60) s = 0;
-      }else{
-        s += delta;
-        while(s >= 60 && m < 60){ s -= 60; m = Math.min(60, m+1); }
-        while(s < 0 && m > 0){ s += 60; m = Math.max(0, m-1); }
-        if(m === 60) s = 0; s = clamp(s, 0, 59);
-      }
-      setMS(m,s);
-    }
-
-    function applyFromInputs(forceReset){
-      let {m,s} = getMS(); m = clamp(m,0,60); s = clamp(s,0,59); if(m===60) s=0; setMS(m,s);
-      const sec = clamp(m*60 + s, 1, 3600); setDuration(sec, forceReset);
-    }
-
-    function setDuration(sec, andReset){
-      durationSec = clamp(sec, 1, 3600);
-      if(!running || andReset){
-        remainingSec = durationSec;
-        visualStartDeg = nowMinuteAngleDeg();
-        drawArc(remainingSec, durationSec, visualStartDeg);
-        updateTexts(); statusText.textContent = '待機中';
-      }else{
-        const now = performance.now();
-        const passed = Math.max(0, (now - startTimeMs)/1000);
-        remainingSec = Math.max(0, durationSec - passed);
-        endTimeMs = performance.now() + remainingSec*1000;
-        drawArc(remainingSec, durationSec, visualStartDeg);
-        updateTexts();
-      }
-    }
-
-    // ===== 針（アニメ） =====
-    function renderClock(){
-      const d = adjustedNow();
-      const s = d.getSeconds() + d.getMilliseconds()/1000;
-      const m = d.getMinutes() + s/60;
-      const h = (d.getHours()%12) + m/60;
-      hH.setAttribute('transform', `rotate(${h*30})`);
-      hM.setAttribute('transform', `rotate(${m*6})`);
-      hS.setAttribute('transform', `rotate(${s*6})`);
-      requestAnimationFrame(renderClock);
-    }
+  /* ===== 時計ロジック ===== */
+  function getNow(){ return new Date(Date.now() + offsetMs); }
+  
+  function renderClock(){
+    const d = getNow();
+    const s = d.getSeconds() + d.getMilliseconds()/1000;
+    const m = d.getMinutes() + s/60;
+    const h = (d.getHours()%12) + m/60;
+    hH.setAttribute('transform', `rotate(${h*30})`);
+    hM.setAttribute('transform', `rotate(${m*6})`);
+    hS.setAttribute('transform', `rotate(${s*6})`);
     requestAnimationFrame(renderClock);
+  }
+  requestAnimationFrame(renderClock);
 
-    // ===== タイマー制御 =====
-    btnStart.addEventListener('click', async () => {
-      if(running) return;
-      await ensureAudio(); await requestWakeLock();
-      running = true; statusText.textContent = 'カウント中…';
-      startTimeMs = performance.now();
-      endTimeMs = startTimeMs + remainingSec*1000;
-      arc.style.display = 'inline'; tick();
-    });
-    btnPause.addEventListener('click', async () => {
-      if(!running) return;
-      running = false; cancelAnimationFrame(rafId);
-      remainingSec = Math.max(0, (endTimeMs - performance.now())/1000);
-      statusText.textContent = '一時停止';
-      drawArc(remainingSec, durationSec, visualStartDeg);
-      updateTexts(); await releaseWakeLock();
-    });
-    btnReset.addEventListener('click', async () => {
-      running = false; cancelAnimationFrame(rafId);
-      remainingSec = durationSec; visualStartDeg = nowMinuteAngleDeg();
-      arc.style.display = durationSec>0 ? 'inline' : 'none';
-      drawArc(remainingSec, durationSec, visualStartDeg);
-      statusText.textContent = '待機中'; updateTexts();
-      document.getElementById('app').classList.remove('flash'); await releaseWakeLock();
-    });
+  /* ===== タイマー描画 ===== */
+  function drawTimer(rem){
+    if(rem <= 0) {
+      arcFill.setAttribute('d', '');
+      arcLine.setAttribute('d', '');
+      return;
+    }
+    const d = getNow();
+    const startDeg = (d.getMinutes() + d.getSeconds()/60)*6 - 90;
+    const sweep = (rem / 3600) * 360; 
+    const endDeg = startDeg + Math.min(sweep, 359.9);
 
-    function tick(){
-      if(!running) return;
-      const now = performance.now();
-      remainingSec = Math.max(0, (endTimeMs - now)/1000);
-      visualStartDeg = nowMinuteAngleDeg();
-      drawArc(remainingSec, durationSec, visualStartDeg);
-      updateTexts();
-      if(remainingSec <= 0.001){
-        running = false; statusText.textContent = '時間になりました';
-        doneEffects(); releaseWakeLock(); return;
-      }
-      rafId = requestAnimationFrame(tick);
-    }
+    const r = 132;
+    const start = polar(150, 150, r, startDeg);
+    const end = polar(150, 150, r, endDeg);
+    const large = sweep > 180 ? 1 : 0;
 
-    function nowMinuteAngleDeg(){
-      const d = adjustedNow();
-      return (d.getMinutes() + d.getSeconds()/60) * 6;
-    }
-    function drawArc(remSec, totalSec, startDeg){
-      const spanDegNow  = Math.max(0.001, Math.min(remSec * 0.1, 359.9));
-      const s = startDeg - 90; const e = startDeg + spanDegNow - 90;
-      const d = describeArc(150,150,132, s, e);
-      arc.setAttribute('d', d); arc.setAttribute('stroke', 'var(--accent)');
-      arc.style.display = totalSec>0 ? 'inline' : 'none';
-    }
-    function polarToCartesian(cx,cy,r,deg){
-      const rad = deg*Math.PI/180;
-      return { x: cx + r*Math.cos(rad), y: cy + r*Math.sin(rad) };
-    }
-    function describeArc(cx,cy,r,startDeg,endDeg){
-      let delta = endDeg - startDeg; const sweep = delta>=0 ? 1 : 0;
-      delta = Math.abs(delta); const large = delta > 180 ? 1 : 0;
-      const s = polarToCartesian(cx,cy,r,startDeg);
-      const e = polarToCartesian(cx,cy,r,endDeg);
-      return `M ${s.x} ${s.y} A ${r} ${r} 0 ${large} ${sweep} ${e.x} ${e.y}`;
-    }
+    const dPath = `M ${start.x} ${start.y} A ${r} ${r} 0 ${large} 1 ${end.x} ${end.y}`;
+    arcFill.setAttribute('d', `M 150 150 L ${start.x} ${start.y} A ${r} ${r} 0 ${large} 1 ${end.x} ${end.y} Z`);
+    arcLine.setAttribute('d', dPath);
+  }
+  function polar(cx, cy, r, deg){
+    const rad = deg * Math.PI/180;
+    return { x: cx + r*Math.cos(rad), y: cy + r*Math.sin(rad) };
+  }
 
-    function fmtRemain(sec){
-      sec = Math.max(0, Math.round(sec));
-      const m = Math.floor(sec/60); const s = sec%60;
-      return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  /* ===== UI更新 ===== */
+  function updateText(){
+    const m = Math.floor(remainingSec/60);
+    const s = Math.floor(remainingSec%60);
+    remainText.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    drawTimer(remainingSec);
+    
+    if(remainingSec > 0){
+      const t = new Date(Date.now() + offsetMs + remainingSec*1000);
+      etaText.textContent = `終了予定：${t.getHours()}:${String(t.getMinutes()).padStart(2,'0')}`;
     }
-    function fmtEta(sec){
-      const d = new Date(Date.now() + offsetMs + Math.max(0, Math.round(sec))*1000);
-      return d.toLocaleTimeString('ja-JP',{hour:'2-digit', minute:'2-digit'});
-    }
-    function updateTexts(){
-      const remainStr = fmtRemain(remainingSec);
-      remainText.textContent = remainStr;
-      remainSimple.textContent = `あと ${remainStr}`;
-      const base = running ? remainingSec : durationSec;
-      etaText.textContent = `終了予定時刻 ${fmtEta(base)}`;
-    }
+  }
 
-    function doneEffects(){
-      arc.setAttribute('stroke','var(--done)');
-      document.getElementById('app').classList.add('flash');
-      playAlarm();
-      if(navigator.vibrate){ try{ navigator.vibrate([200,100,200]); }catch{} }
-    }
+  /* ===== 入力操作 (即時反映) ===== */
+  function nudge(dm, ds){
+    if(running) return;
+    let m = parseInt(minInput.value) + dm;
+    let s = parseInt(secInput.value) + ds;
+    
+    if(s >= 60) { s-=60; m++; }
+    if(s < 0) { s+=60; m--; }
+    
+    m = Math.max(0, Math.min(60, m));
+    if(m===60) s=0;
+    
+    minInput.value = m;
+    secInput.value = s;
+    
+    durationSec = m*60 + s;
+    remainingSec = durationSec;
+    updateText();
+  }
 
-    // ===== オーディオ =====
-    async function ensureAudio(){
-      try{
-        if(!audioCtx || audioCtx.state==='closed'){
-          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }else if(audioCtx.state==='suspended'){
-          await audioCtx.resume();
-        }
-      }catch{}
-    }
-    function playAlarm(){
-      ensureAudio();
-      const mode = soundSelect.value;
-      playSynth(mode);
-    }
-    function playSynth(mode){
-      try{
-        const ctx = audioCtx; if(!ctx) return;
-        const t0 = ctx.currentTime + 0.01;
-        const master = ctx.createGain(); master.gain.value = 0.9; master.connect(ctx.destination);
-        const tone = (freq, type, start, dur, vol=0.6, attack=0.01, release=0.15) => {
-          const o = ctx.createOscillator(); const g = ctx.createGain();
-          o.type = type; o.frequency.setValueAtTime(freq, t0 + start);
-          g.gain.setValueAtTime(0.0001, t0 + start);
-          g.gain.exponentialRampToValueAtTime(vol, t0 + start + attack);
-          g.gain.exponentialRampToValueAtTime(0.0001, t0 + start + dur + release);
-          o.connect(g).connect(master); o.start(t0 + start); o.stop(t0 + start + dur + release + 0.02);
-        };
-        const seq = {
-          pipipi: ()=>{ [0,0.25,0.50].forEach((s)=> tone(1000,'square', s, 0.18, 0.55, 0.008, 0.08)); },
-          chime:  ()=>{ tone(1568,'sine',0,0.22,0.6,0.01,0.18); tone(1319,'sine',0.24,0.28,0.6,0.01,0.22); },
-          bell:   ()=>{ tone(784,'triangle',0,0.6,0.7,0.005,0.6); },
-          long:   ()=>{ tone(1046.5,'sine',0,1.0,0.6,0.02,0.25); },
-          down3:  ()=>{ [1200,900,700].forEach((f,i)=> tone(f,'square', i*0.22, 0.18, 0.5, 0.01, 0.08)); },
-        };
-        (seq[mode] || seq.pipipi)();
-      }catch(e){ console.error(e); }
-    }
+  function attachHold(btn, cb){
+    let t, i;
+    const start = (e) => { e.preventDefault(); cb(); t=setTimeout(()=>{ i=setInterval(cb, 80); }, 400); };
+    const end = () => { clearTimeout(t); clearInterval(i); };
+    btn.addEventListener('touchstart', start); btn.addEventListener('touchend', end);
+    btn.addEventListener('mousedown', start); btn.addEventListener('mouseup', end);
+    btn.addEventListener('mouseleave', end);
+  }
+  attachHold(el('minUp'), ()=>nudge(1,0));
+  attachHold(el('minDown'), ()=>nudge(-1,0));
+  attachHold(el('secUp'), ()=>nudge(0,5)); 
+  attachHold(el('secDown'), ()=>nudge(0,-5));
 
-    // ===== 画面スリープ防止 =====
-    let wakeLock = null;
-    async function requestWakeLock(){
-      try{
-        if ('wakeLock' in navigator && !wakeLock){
-          wakeLock = await navigator.wakeLock.request('screen');
-          wakeLock.addEventListener('release', ()=>{ wakeLock = null; });
-        }
-      }catch(e){}
-    }
-    async function releaseWakeLock(){ try{ await wakeLock?.release(); wakeLock = null; }catch{} }
+  /* ===== オーディオ制御 (Fix) ===== */
+  let audioCtx = null;
 
-    // 初期化
-    applyFromInputs(true); updateTexts(); requestAnimationFrame(renderClock);
-  })();
-  </script>
+  function unlockAudio() {
+    if(!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if(audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    const buffer = audioCtx.createBuffer(1, 1, 22050);
+    const source = audioCtx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(audioCtx.destination);
+    source.start(0);
+  }
+
+  /* ===== タイマー制御 ===== */
+  el('btnStart').onclick = () => {
+    if(running) return;
+    unlockAudio(); 
+    running = true;
+    document.body.classList.add('is-running');
+    statusText.textContent = 'カウント中…';
+    remainText.classList.remove('finished');
+    endTime = performance.now() + remainingSec * 1000;
+    tick();
+  };
+
+  el('btnPause').onclick = () => {
+    running = false;
+    document.body.classList.remove('is-running');
+    statusText.textContent = '一時停止';
+    cancelAnimationFrame(rafId);
+  };
+
+  el('btnReset').onclick = () => {
+    running = false;
+    document.body.classList.remove('is-running');
+    statusText.textContent = '待機中';
+    remainText.classList.remove('finished');
+    cancelAnimationFrame(rafId);
+    remainingSec = durationSec;
+    updateText();
+  };
+
+  function tick(){
+    if(!running) return;
+    const now = performance.now();
+    remainingSec = Math.max(0, (endTime - now)/1000);
+    updateText();
+    
+    if(remainingSec <= 0.05){
+      running = false;
+      document.body.classList.remove('is-running');
+      statusText.textContent = '時間です';
+      remainText.classList.add('finished');
+      playAlarm(); // 音再生
+      remainingSec = 0;
+      updateText();
+      return;
+    }
+    rafId = requestAnimationFrame(tick);
+  }
+
+  /* ===== サウンド生成 ===== */
+  function playTone(freq, type, start, dur){
+    if(!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = type; osc.frequency.value = freq;
+    osc.connect(g); g.connect(audioCtx.destination);
+    const t = audioCtx.currentTime + start;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.5, t+0.01);
+    g.gain.setValueAtTime(0.5, t+dur-0.01);
+    g.gain.linearRampToValueAtTime(0, t+dur);
+    osc.start(t); osc.stop(t+dur+0.05);
+  }
+
+  function playAlarm(){
+    if(!audioCtx) return;
+    const mode = soundSelect.value;
+    if(mode === 'pipipi'){
+      playTone(1000, 'square', 0, 0.15);
+      playTone(1000, 'square', 0.25, 0.15);
+      playTone(1000, 'square', 0.50, 0.15);
+    } else if(mode === 'chime'){
+      playTone(1500, 'sine', 0, 0.4);
+      playTone(1200, 'sine', 0.5, 0.6);
+    } else {
+      playTone(800, 'triangle', 0, 0.8);
+    }
+  }
+
+  el('btnPreview').onclick = () => { 
+    unlockAudio();
+    playAlarm();
+  };
+
+  /* ===== カラー設定 ===== */
+  const dots = document.querySelectorAll('.dot');
+  dots.forEach(d => {
+    d.onclick = () => {
+      dots.forEach(x => x.classList.remove('active'));
+      d.classList.add('active');
+      const c = d.dataset.color;
+      document.documentElement.style.setProperty('--accent', c);
+    };
+  });
+
+  /* ===== シンプル表示切り替え ===== */
+  const toggleSimple = (on) => {
+    document.body.classList.toggle('simple', on);
+    el('simpleToggle').checked = on;
+  };
+  el('simpleToggle').onchange = (e) => toggleSimple(e.target.checked);
+  el('btnExitSimple').onclick = () => toggleSimple(false);
+
+  /* ===== 時計補正ダイアログ ===== */
+  const dlg = el('timeDlg');
+  el('btnOpenTimeDlg').onclick = () => {
+    el('offsetText').textContent = `±${Math.round(offsetMs/60000)}分`;
+    dlg.showModal();
+  };
+  dlg.querySelectorAll('.badge').forEach(b => {
+    b.onclick = () => {
+      offsetMs += Number(b.dataset.d);
+      localStorage.setItem('ut_offset', offsetMs);
+      el('offsetText').textContent = `${offsetMs>=0?'+':''}${Math.round(offsetMs/1000)}秒`;
+      el('offsetHint').textContent = `補正：${Math.round(offsetMs/1000)}秒`;
+    };
+  });
+  el('btnSaveOffset').onclick = () => dlg.close();
+  el('btnResetOffset').onclick = () => { offsetMs=0; localStorage.setItem('ut_offset',0); dlg.close(); el('offsetHint').textContent = '補正：0秒'; };
+
+  // 初期化
+  el('offsetHint').textContent = `補正：${Math.round(offsetMs/1000)}秒`;
+  updateText();
+})();
+</script>
 </body>
 </html>
