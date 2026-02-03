@@ -10,10 +10,7 @@
     --bg: #f8fafc;
     --card: #ffffff;
     --ink: #1e293b;
-    
-    /* 初期カラー（青） */
     --accent: #2563eb;
-    
     --stop: #ef4444;
     --ready: #22c55e;
     --muted: #94a3b8;
@@ -26,19 +23,38 @@
     --r-lg: 16px;
     --r-md: 12px;
 
+    /* 基本サイズ（PC/タブレット） */
     --gap: 14px;
     --pad: 16px;
-
-    /* iOS Safari 対策 */
-    --appH: calc(var(--vh, 1vh) * 100);
-
-    /* ボタンサイズ */
     --btnH: 60px;
     --btnFz: 18px;
     --btnBigFz: 22px;
+    --clockMax: 50svh; /* 画面高さの50%まで */
 
-    /* 時計最大サイズ */
-    --clockMax: 50svh;
+    /* iOS Safari 対策 */
+    --appH: calc(var(--vh, 1vh) * 100);
+  }
+
+  /* ===== スマホ・画面が低い端末用の調整 ===== */
+  @media (max-height: 750px) {
+    :root {
+      --gap: 8px;          /* 隙間を詰める */
+      --pad: 12px;         /* 外枠を詰める */
+      --btnH: 52px;        /* ボタンを少し低く */
+      --btnFz: 16px;       /* 文字を少し小さく */
+      --btnBigFz: 20px;
+      --clockMax: 42svh;   /* 時計を少し小さくしてスペース確保 */
+    }
+    .setting-card { height: 54px !important; padding: 6px 10px !important; }
+    .remain { font-size: clamp(32px, 12vw, 50px) !important; }
+  }
+  
+  /* さらに小さい画面（iPhone SEなど） */
+  @media (max-height: 600px) {
+    :root {
+      --clockMax: 35svh;   /* さらに時計を小さく */
+      --btnH: 48px;
+    }
   }
 
   *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -54,20 +70,19 @@
     touch-action: manipulation;
     user-select:none; -webkit-user-select:none;
     overscroll-behavior: contain;
-    transition: background-color 0.3s;
   }
 
   /* ===== レイアウト ===== */
-  /* PCでも幅を制限し、中央寄せで縦長レイアウトを維持 */
   .app-shell{
     height: 100%; 
     width: 100%;
-    max-width: 560px; /* ★ここを固定してスクリーンショットの比率を維持 */
+    max-width: 560px; /* PCでもこの幅で固定 */
     margin: 0 auto; 
     padding: var(--pad);
+    padding-bottom: env(safe-area-inset-bottom, 10px); /* iPhone下部のバー対策 */
     display:flex; flex-direction:column; gap: var(--gap); 
     position: relative;
-    background: var(--bg); /* PC背景と馴染ませる */
+    background: var(--bg);
   }
 
   /* シンプルモード解除ボタン */
@@ -89,7 +104,6 @@
   .sub{ font-size:.85rem; color: var(--muted); white-space:nowrap; }
 
   .header-right{ display:flex; align-items:center; gap: 10px; }
-  
   .toggle{ display:flex; align-items:center; gap:8px; font-size:.95rem; color: var(--muted2); cursor: pointer; }
   .toggle input{ width: 18px; height: 18px; accent-color: var(--accent); }
 
@@ -101,7 +115,7 @@
   }
   .iconBtn:active{ transform: scale(.98); }
 
-  /* コンテンツレイアウト（常に縦並び） */
+  /* コンテンツレイアウト */
   .layout{
     flex: 1; min-height:0;
     display:flex; flex-direction: column;
@@ -110,16 +124,16 @@
 
   /* ===== 時計エリア ===== */
   .clock-area{
-    flex: 1; /* 余白をすべて時計エリアに使う */
+    flex: 1 1 auto; /* 必要に応じて縮小可能に */
     display:flex; flex-direction:column;
     align-items:center; justify-content:center;
-    gap: 10px; min-height: 0;
+    gap: 4px; min-height: 0; /* 縮小限界を撤廃 */
   }
 
   svg#clock{
     width:auto; 
     height: auto; 
-    max-height: 100%; 
+    max-height: 100%; /* 親要素からはみ出さない */
     max-width: 100%;
     aspect-ratio: 1/1; 
     filter: drop-shadow(0 10px 20px rgba(2,6,23,0.1));
@@ -128,13 +142,13 @@
   #timerArc { fill: var(--accent); opacity: 0.15; transition: fill 0.3s; }
   #timerLine { stroke: var(--accent); transition: stroke 0.3s; }
 
-  .timer-display{ text-align:center; display:grid; gap: 0; margin-top: -10px; }
+  .timer-display{ text-align:center; display:grid; gap: 0; flex-shrink: 0; }
   .remain{
     font-size: clamp(40px, 8vh, 64px); font-weight: 900;
     font-variant-numeric: tabular-nums; line-height: 1.1; letter-spacing: 0.02em;
   }
-  .eta{ font-size: 1rem; color: var(--muted2); font-weight:700; }
-  .status{ font-size: 0.8rem; color: #94a3b8; font-weight:700; margin-top:2px; }
+  .eta{ font-size: 0.95rem; color: var(--muted2); font-weight:700; }
+  .status{ font-size: 0.8rem; color: #94a3b8; font-weight:700; }
 
   /* 終了時アニメーション */
   @keyframes blink { 50% { opacity: 0.45; } }
@@ -144,11 +158,11 @@
   .panel{
     background: var(--card); border-radius: var(--r-xl); padding: 16px;
     box-shadow: var(--shadowUp); 
-    display:flex; flex-direction:column; gap: 14px;
+    display:flex; flex-direction:column; gap: var(--gap);
     flex-shrink: 0; /* パネルは縮めない */
   }
 
-  .main-btns{ display:grid; grid-template-columns: 2fr 1.2fr 1.2fr; gap: 12px; }
+  .main-btns{ display:grid; grid-template-columns: 2fr 1.2fr 1.2fr; gap: 10px; }
   .btn{
     border: none; border-radius: var(--r-lg); font-weight: 900; font-size: var(--btnFz);
     cursor: pointer; display:flex; align-items:center; justify-content:center;
@@ -163,7 +177,7 @@
 
   /* 設定グリッド */
   .settings-grid{
-    display:grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    display:grid; grid-template-columns: 1fr 1fr; gap: 10px;
   }
   .card-time { grid-column: 1 / -1; }
 
@@ -175,19 +189,19 @@
 
   .setting-title{ font-weight:900; color: var(--muted2); font-size: 0.9rem; white-space:nowrap; }
 
-  .input-stack{ display:flex; gap: 12px; align-items:center; justify-content: flex-end; width: 100%; }
-  .input-row{ display:flex; align-items:center; gap: 8px; }
+  .input-stack{ display:flex; gap: 10px; align-items:center; justify-content: flex-end; width: 100%; }
+  .input-row{ display:flex; align-items:center; gap: 6px; }
 
   /* 数字入力欄 */
   .num{
-    width: 60px; height: 44px; text-align:center; font-size: 1.4rem; font-weight: 900;
+    width: 54px; height: 42px; text-align:center; font-size: 1.35rem; font-weight: 900;
     border: 2px solid var(--accent); border-radius: 10px; background: #fff; color: var(--ink);
     transition: border-color 0.3s;
     appearance: none; -webkit-appearance: none;
   }
   
   .step-btn{
-    width: 40px; height: 40px; border-radius: 50%; border: none;
+    width: 38px; height: 38px; border-radius: 50%; border: none;
     background: var(--accent); color: #fff; font-size: 1.4rem; font-weight: 900;
     cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     transition: background-color 0.3s;
@@ -296,7 +310,7 @@
     <footer class="panel">
       <div class="main-btns">
         <button id="btnStart" class="btn btn-start">スタート</button>
-        <button id="btnPause" class="btn btn-pause">ストップ</button>
+        <button id="btnPause" class="btn btn-pause">停止</button>
         <button id="btnReset" class="btn btn-reset">リセット</button>
       </div>
 
