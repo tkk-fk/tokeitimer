@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -36,26 +35,46 @@
     --appH: calc(var(--vh, 1vh) * 100);
   }
 
-  /* ===== スマホ・画面が低い端末用の調整 ===== */
-  @media (max-height: 750px) {
+  /* ===== スマホ・幅狭・画面が低い端末用の強力な調整 ===== */
+  @media (max-width: 600px), (max-height: 750px) {
     :root {
       --gap: 8px;          /* 隙間を詰める */
-      --pad: 12px;         /* 外枠を詰める */
-      --btnH: 52px;        /* ボタンを少し低く */
-      --btnFz: 16px;       /* 文字を少し小さく */
-      --btnBigFz: 20px;
-      --clockMax: 42svh;   /* 時計を少し小さくしてスペース確保 */
+      --pad: 10px;         /* 外枠を詰める */
+      --btnH: 50px;        /* ボタンを低く */
+      --btnFz: 15px;       /* 文字を小さく */
+      --btnBigFz: 18px;
+      --clockMax: 40svh;   /* 時計を小さくしてスペース確保 */
     }
-    .setting-card { height: 54px !important; padding: 6px 10px !important; }
-    .remain { font-size: clamp(32px, 12vw, 50px) !important; }
+    
+    /* 設定グリッドを縦積みに強制変更 */
+    .settings-grid {
+      grid-template-columns: 1fr !important; /* 強制1列 */
+      gap: 8px;
+    }
+    
+    /* カード内のパディング縮小 */
+    .setting-card { 
+      height: auto !important; 
+      min-height: 50px;
+      padding: 6px 10px !important; 
+    }
+
+    /* 時間入力周りのサイズダウン（はみ出し防止のキモ） */
+    .num { width: 44px !important; height: 38px !important; font-size: 1.2rem !important; }
+    .step-btn { width: 34px !important; height: 34px !important; font-size: 1.2rem !important; }
+    .input-row { gap: 4px !important; }
+    .input-stack { gap: 8px !important; }
+    
+    /* 残り時間文字サイズ */
+    .remain { font-size: clamp(32px, 11vw, 50px) !important; margin-top: -5px !important; }
+    
+    /* メインボタンの隙間調整 */
+    .main-btns { gap: 8px !important; }
   }
-  
-  /* さらに小さい画面（iPhone SEなど） */
+
+  /* iPhone SEなどの極小画面対策 */
   @media (max-height: 600px) {
-    :root {
-      --clockMax: 35svh;   /* さらに時計を小さく */
-      --btnH: 48px;
-    }
+    :root { --clockMax: 32svh; --btnH: 44px; }
   }
 
   *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -77,10 +96,10 @@
   .app-shell{
     height: 100%; 
     width: 100%;
-    max-width: 560px; /* PCでもこの幅で固定 */
+    max-width: 560px; /* PCでの最大幅 */
     margin: 0 auto; 
     padding: var(--pad);
-    padding-bottom: env(safe-area-inset-bottom, 10px); /* iPhone下部のバー対策 */
+    padding-bottom: calc(env(safe-area-inset-bottom, 10px) + 4px);
     display:flex; flex-direction:column; gap: var(--gap); 
     position: relative;
     background: var(--bg);
@@ -97,22 +116,22 @@
   body.simple #btnExitSimple { display: block; }
 
   header{
-    height: 44px; display:flex; align-items:center; justify-content:space-between; gap: 10px; min-height:0; flex-shrink: 0;
+    height: 40px; display:flex; align-items:center; justify-content:space-between; gap: 10px; min-height:0; flex-shrink: 0;
   }
 
-  .title{ display:flex; align-items:baseline; gap:10px; min-width:0; }
-  h1{ margin:0; font-size: 1.1rem; color: var(--muted2); letter-spacing:.02em; white-space:nowrap; }
-  .sub{ font-size:.85rem; color: var(--muted); white-space:nowrap; }
+  .title{ display:flex; align-items:baseline; gap:8px; min-width:0; }
+  h1{ margin:0; font-size: 1rem; color: var(--muted2); letter-spacing:.02em; white-space:nowrap; }
+  .sub{ font-size:.75rem; color: var(--muted); white-space:nowrap; }
 
-  .header-right{ display:flex; align-items:center; gap: 10px; }
-  .toggle{ display:flex; align-items:center; gap:8px; font-size:.95rem; color: var(--muted2); cursor: pointer; }
-  .toggle input{ width: 18px; height: 18px; accent-color: var(--accent); }
+  .header-right{ display:flex; align-items:center; gap: 8px; }
+  .toggle{ display:flex; align-items:center; gap:6px; font-size:.85rem; color: var(--muted2); cursor: pointer; white-space: nowrap;}
+  .toggle input{ width: 16px; height: 16px; accent-color: var(--accent); }
 
   .iconBtn{
-    border: none; background: var(--card); box-shadow: 0 4px 10px rgba(2,6,23,.06);
-    border-radius: 999px; height: 36px; padding: 0 12px;
-    display:flex; align-items:center; gap:8px; cursor:pointer;
-    font-weight:700; color: var(--ink); font-size: 0.85rem;
+    border: none; background: var(--card); box-shadow: 0 3px 8px rgba(2,6,23,.06);
+    border-radius: 999px; height: 32px; padding: 0 10px;
+    display:flex; align-items:center; gap:6px; cursor:pointer;
+    font-weight:700; color: var(--ink); font-size: 0.8rem; white-space: nowrap;
   }
   .iconBtn:active{ transform: scale(.98); }
 
@@ -121,49 +140,48 @@
     flex: 1; min-height:0;
     display:flex; flex-direction: column;
     gap: var(--gap);
+    justify-content: flex-end; /* 下揃え気味にする */
   }
 
   /* ===== 時計エリア ===== */
   .clock-area{
-    flex: 1 1 auto; /* 必要に応じて縮小可能に */
+    flex: 1 1 auto; 
     display:flex; flex-direction:column;
     align-items:center; justify-content:center;
-    gap: 4px; min-height: 0; /* 縮小限界を撤廃 */
+    gap: 0; min-height: 0; 
   }
 
   svg#clock{
     width:auto; 
     height: auto; 
-    max-height: 100%; /* 親要素からはみ出さない */
+    max-height: 100%; 
     max-width: 100%;
     aspect-ratio: 1/1; 
-    filter: drop-shadow(0 10px 20px rgba(2,6,23,0.1));
+    filter: drop-shadow(0 8px 16px rgba(2,6,23,0.1));
   }
-  /* 扇形の色 */
   #timerArc { fill: var(--accent); opacity: 0.15; transition: fill 0.3s; }
   #timerLine { stroke: var(--accent); transition: stroke 0.3s; }
 
-  .timer-display{ text-align:center; display:grid; gap: 0; flex-shrink: 0; }
+  .timer-display{ text-align:center; display:grid; gap: 0; flex-shrink: 0; margin-top: 4px; }
   .remain{
     font-size: clamp(40px, 8vh, 64px); font-weight: 900;
     font-variant-numeric: tabular-nums; line-height: 1.1; letter-spacing: 0.02em;
   }
-  .eta{ font-size: 0.95rem; color: var(--muted2); font-weight:700; }
-  .status{ font-size: 0.8rem; color: #94a3b8; font-weight:700; }
+  .eta{ font-size: 0.9rem; color: var(--muted2); font-weight:700; }
+  .status{ font-size: 0.75rem; color: #94a3b8; font-weight:700; }
 
-  /* 終了時アニメーション */
   @keyframes blink { 50% { opacity: 0.45; } }
   .finished{ animation: blink .65s step-end infinite; color: var(--stop) !important; }
 
   /* ===== 操作パネル ===== */
   .panel{
-    background: var(--card); border-radius: var(--r-xl); padding: 16px;
+    background: var(--card); border-radius: var(--r-xl); padding: 14px;
     box-shadow: var(--shadowUp); 
     display:flex; flex-direction:column; gap: var(--gap);
-    flex-shrink: 0; /* パネルは縮めない */
+    flex-shrink: 0; 
   }
 
-  .main-btns{ display:grid; grid-template-columns: 2fr 1.2fr 1.2fr; gap: 10px; }
+  .main-btns{ display:grid; grid-template-columns: 2fr 1.2fr 1.2fr; gap: 12px; }
   .btn{
     border: none; border-radius: var(--r-lg); font-weight: 900; font-size: var(--btnFz);
     cursor: pointer; display:flex; align-items:center; justify-content:center;
@@ -171,7 +189,6 @@
     box-shadow: 0 4px 10px rgba(2,6,23,.05);
   }
   .btn:active{ transform: scale(0.97); }
-  
   .btn-start{ background: var(--ready); color: #fff; font-size: var(--btnBigFz); }
   .btn-pause{ background: #e2e8f0; color: var(--ink); }
   .btn-reset{ background: #fff; color: var(--stop); border: 2px solid #fee2e2; box-shadow: none; }
@@ -193,7 +210,6 @@
   .input-stack{ display:flex; gap: 10px; align-items:center; justify-content: flex-end; width: 100%; }
   .input-row{ display:flex; align-items:center; gap: 6px; }
 
-  /* 数字入力欄 */
   .num{
     width: 54px; height: 42px; text-align:center; font-size: 1.35rem; font-weight: 900;
     border: 2px solid var(--accent); border-radius: 10px; background: #fff; color: var(--ink);
@@ -210,13 +226,11 @@
   }
   .step-btn:active{ transform: scale(0.95); }
 
-  /* 音選択 */
   select{
-    height: 40px; padding: 0 10px; border-radius: 10px; border: 1px solid #cbd5e1;
-    background:#fff; font-size: 0.95rem; font-weight:700; color: var(--ink); width: 100%;
+    height: 38px; padding: 0 8px; border-radius: 8px; border: 1px solid #cbd5e1;
+    background:#fff; font-size: 0.9rem; font-weight:700; color: var(--ink); width: 100%;
   }
 
-  /* カラーピッカー */
   .color-dots { display: flex; gap: 10px; }
   .dot {
     width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
@@ -224,10 +238,9 @@
   }
   .dot.active { border-color: #fff; outline: 2px solid var(--ink); transform:scale(1.1); }
 
-  /* 実行中は設定を触れない */
   body.is-running .settings-grid{ opacity:.5; pointer-events:none; filter: grayscale(10%); }
 
-  /* ===== シンプル表示 ===== */
+  /* シンプル表示 */
   body.simple .settings-grid { display:none; }
   body.simple .sub, body.simple .header-right { display:none; }
   body.simple .clock-area { justify-content: center; }
@@ -237,7 +250,7 @@
   body.simple .panel{ background: transparent; box-shadow: none; padding:0; }
   body.simple .main-btns { display: none; } 
 
-  /* ===== ダイアログ ===== */
+  /* ダイアログ */
   dialog{
     border:none; border-radius: 18px; padding: 16px;
     width: min(92vw, 420px); box-shadow: 0 20px 60px rgba(2,6,23,.25);
@@ -271,7 +284,7 @@
     <div class="header-right">
       <label class="toggle" title="時計と残り時間だけの表示にします">
         <input type="checkbox" id="simpleToggle" />
-        <span>シンプル表示</span>
+        <span>シンプル</span>
       </label>
 
       <button class="iconBtn" id="btnOpenTimeDlg" type="button" aria-label="時刻合わせ">
@@ -322,13 +335,13 @@
             <div class="input-row">
               <button class="step-btn" id="minDown">−</button>
               <input type="text" inputmode="numeric" id="minInput" class="num" value="5" readonly>
-              <span style="font-weight:bold; font-size:0.9rem">分</span>
+              <span style="font-weight:bold; font-size:0.8rem">分</span>
               <button class="step-btn" id="minUp">＋</button>
             </div>
-            <div class="input-row" style="margin-left:10px;">
+            <div class="input-row" style="margin-left:4px;">
               <button class="step-btn" id="secDown">−</button>
               <input type="text" inputmode="numeric" id="secInput" class="num" value="0" readonly>
-              <span style="font-weight:bold; font-size:0.9rem">秒</span>
+              <span style="font-weight:bold; font-size:0.8rem">秒</span>
               <button class="step-btn" id="secUp">＋</button>
             </div>
           </div>
@@ -407,7 +420,7 @@
   let rafId = 0;
   let offsetMs = Number(localStorage.getItem('ut_offset') || 0);
 
-  /* ===== 時計描画 (目盛り) ===== */
+  /* ===== 時計描画 ===== */
   const ticksG = el('ticks');
   const numsG = el('nums');
   for (let i=0; i<60; i++){
@@ -490,7 +503,7 @@
     }
   }
 
-  /* ===== 入力操作 (即時反映) ===== */
+  /* ===== 入力操作 ===== */
   function nudge(dm, ds){
     if(running) return;
     let m = parseInt(minInput.value) + dm;
@@ -523,16 +536,11 @@
   attachHold(el('secUp'), ()=>nudge(0,5)); 
   attachHold(el('secDown'), ()=>nudge(0,-5));
 
-  /* ===== オーディオ制御 (Fix) ===== */
+  /* ===== オーディオ制御 ===== */
   let audioCtx = null;
-
   function unlockAudio() {
-    if(!audioCtx) {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    if(audioCtx.state === 'suspended') {
-      audioCtx.resume();
-    }
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended') audioCtx.resume();
     const buffer = audioCtx.createBuffer(1, 1, 22050);
     const source = audioCtx.createBufferSource();
     source.buffer = buffer;
@@ -540,7 +548,6 @@
     source.start(0);
   }
 
-  /* ===== タイマー制御 ===== */
   el('btnStart').onclick = () => {
     if(running) return;
     unlockAudio(); 
@@ -574,13 +581,12 @@
     const now = performance.now();
     remainingSec = Math.max(0, (endTime - now)/1000);
     updateText();
-    
     if(remainingSec <= 0.05){
       running = false;
       document.body.classList.remove('is-running');
       statusText.textContent = '時間です';
       remainText.classList.add('finished');
-      playAlarm(); // 音再生
+      playAlarm();
       remainingSec = 0;
       updateText();
       return;
@@ -588,7 +594,6 @@
     rafId = requestAnimationFrame(tick);
   }
 
-  /* ===== サウンド生成 ===== */
   function playTone(freq, type, start, dur){
     if(!audioCtx) return;
     const osc = audioCtx.createOscillator();
@@ -617,13 +622,8 @@
       playTone(800, 'triangle', 0, 0.8);
     }
   }
+  el('btnPreview').onclick = () => { unlockAudio(); playAlarm(); };
 
-  el('btnPreview').onclick = () => { 
-    unlockAudio();
-    playAlarm();
-  };
-
-  /* ===== カラー設定 ===== */
   const dots = document.querySelectorAll('.dot');
   dots.forEach(d => {
     d.onclick = () => {
@@ -634,7 +634,6 @@
     };
   });
 
-  /* ===== シンプル表示切り替え ===== */
   const toggleSimple = (on) => {
     document.body.classList.toggle('simple', on);
     el('simpleToggle').checked = on;
@@ -642,7 +641,6 @@
   el('simpleToggle').onchange = (e) => toggleSimple(e.target.checked);
   el('btnExitSimple').onclick = () => toggleSimple(false);
 
-  /* ===== 時計補正ダイアログ ===== */
   const dlg = el('timeDlg');
   el('btnOpenTimeDlg').onclick = () => {
     el('offsetText').textContent = `±${Math.round(offsetMs/60000)}分`;
@@ -659,11 +657,9 @@
   el('btnSaveOffset').onclick = () => dlg.close();
   el('btnResetOffset').onclick = () => { offsetMs=0; localStorage.setItem('ut_offset',0); dlg.close(); el('offsetHint').textContent = '補正：0秒'; };
 
-  // 初期化
   el('offsetHint').textContent = `補正：${Math.round(offsetMs/1000)}秒`;
   updateText();
 })();
 </script>
 </body>
 </html>
-
