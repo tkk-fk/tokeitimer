@@ -29,7 +29,7 @@
     --btnH: 60px;
     --btnFz: 18px;
     --btnBigFz: 22px;
-    --clockMax: 50svh; /* 画面高さの50%まで */
+    --clockMax: 50svh;
 
     /* iOS Safari 対策 */
     --appH: calc(var(--vh, 1vh) * 100);
@@ -38,43 +38,65 @@
   /* ===== スマホ・幅狭・画面が低い端末用の強力な調整 ===== */
   @media (max-width: 600px), (max-height: 750px) {
     :root {
-      --gap: 8px;          /* 隙間を詰める */
-      --pad: 10px;         /* 外枠を詰める */
-      --btnH: 50px;        /* ボタンを低く */
-      --btnFz: 15px;       /* 文字を小さく */
-      --btnBigFz: 18px;
+      --gap: 10px;         /* 隙間を詰める */
+      --pad: 12px;         /* 外枠を詰める */
+      --btnH: 54px;        /* ボタンを低く */
+      --btnFz: 16px;       /* 文字を小さく */
+      --btnBigFz: 20px;
       --clockMax: 40svh;   /* 時計を小さくしてスペース確保 */
     }
     
+    /* ヘッダーの折り返しを許可し、高さを自動に */
+    header {
+      flex-wrap: wrap;
+      height: auto !important;
+      padding-bottom: 8px;
+    }
+    .title { margin-bottom: 4px; }
+    .header-right { margin-left: auto; }
+
     /* 設定グリッドを縦積みに強制変更 */
     .settings-grid {
       grid-template-columns: 1fr !important; /* 強制1列 */
-      gap: 8px;
+      gap: 10px;
     }
     
-    /* カード内のパディング縮小 */
+    /* カード内のパディング調整 */
     .setting-card { 
       height: auto !important; 
-      min-height: 50px;
-      padding: 6px 10px !important; 
+      min-height: 54px;
+      padding: 10px 12px !important; 
+      flex-direction: column; /* 中身も縦積みに */
+      align-items: flex-start !important;
+      gap: 8px !important;
+    }
+    .setting-title { margin-bottom: 4px; }
+
+    /* 時間入力の縦積み配置 */
+    .input-stack {
+      flex-direction: column !important;
+      width: 100% !important;
+      gap: 8px !important;
+    }
+    .input-row {
+      width: 100% !important;
+      justify-content: space-between !important;
+      margin-left: 0 !important;
     }
 
-    /* 時間入力周りのサイズダウン（はみ出し防止のキモ） */
-    .num { width: 44px !important; height: 38px !important; font-size: 1.2rem !important; }
-    .step-btn { width: 34px !important; height: 34px !important; font-size: 1.2rem !important; }
-    .input-row { gap: 4px !important; }
-    .input-stack { gap: 8px !important; }
+    /* 各種パーツのサイズ調整 */
+    .num { width: 50px !important; height: 40px !important; font-size: 1.3rem !important; }
+    .step-btn { width: 40px !important; height: 40px !important; font-size: 1.3rem !important; }
+    select { height: 40px !important; }
+    .btn-mini { height: 40px !important; }
     
     /* 残り時間文字サイズ */
-    .remain { font-size: clamp(32px, 11vw, 50px) !important; margin-top: -5px !important; }
-    
-    /* メインボタンの隙間調整 */
-    .main-btns { gap: 8px !important; }
+    .remain { font-size: clamp(36px, 11vw, 54px) !important; margin-top: -2px !important; }
   }
 
   /* iPhone SEなどの極小画面対策 */
   @media (max-height: 600px) {
-    :root { --clockMax: 32svh; --btnH: 44px; }
+    :root { --clockMax: 32svh; --btnH: 48px; }
   }
 
   *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -116,14 +138,14 @@
   body.simple #btnExitSimple { display: block; }
 
   header{
-    height: 40px; display:flex; align-items:center; justify-content:space-between; gap: 10px; min-height:0; flex-shrink: 0;
+    height: 44px; display:flex; align-items:center; justify-content:space-between; gap: 10px; min-height:0; flex-shrink: 0;
   }
 
   .title{ display:flex; align-items:baseline; gap:8px; min-width:0; }
   h1{ margin:0; font-size: 1rem; color: var(--muted2); letter-spacing:.02em; white-space:nowrap; }
   .sub{ font-size:.75rem; color: var(--muted); white-space:nowrap; }
 
-  .header-right{ display:flex; align-items:center; gap: 8px; }
+  .header-right{ display:flex; align-items:center; gap: 12px; }
   .toggle{ display:flex; align-items:center; gap:6px; font-size:.85rem; color: var(--muted2); cursor: pointer; white-space: nowrap;}
   .toggle input{ width: 16px; height: 16px; accent-color: var(--accent); }
 
@@ -140,7 +162,7 @@
     flex: 1; min-height:0;
     display:flex; flex-direction: column;
     gap: var(--gap);
-    justify-content: flex-end; /* 下揃え気味にする */
+    justify-content: flex-end;
   }
 
   /* ===== 時計エリア ===== */
@@ -175,7 +197,7 @@
 
   /* ===== 操作パネル ===== */
   .panel{
-    background: var(--card); border-radius: var(--r-xl); padding: 14px;
+    background: var(--card); border-radius: var(--r-xl); padding: 16px;
     box-shadow: var(--shadowUp); 
     display:flex; flex-direction:column; gap: var(--gap);
     flex-shrink: 0; 
@@ -195,14 +217,14 @@
 
   /* 設定グリッド */
   .settings-grid{
-    display:grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    display:grid; grid-template-columns: 1fr 1fr; gap: 12px;
   }
   .card-time { grid-column: 1 / -1; }
 
   .setting-card{
     background: #f1f5f9; border-radius: var(--r-md); padding: 8px 12px;
     display:flex; align-items:center; justify-content:space-between; gap: 10px;
-    height: 60px;
+    height: 64px;
   }
 
   .setting-title{ font-weight:900; color: var(--muted2); font-size: 0.9rem; white-space:nowrap; }
@@ -211,14 +233,14 @@
   .input-row{ display:flex; align-items:center; gap: 6px; }
 
   .num{
-    width: 54px; height: 42px; text-align:center; font-size: 1.35rem; font-weight: 900;
+    width: 58px; height: 44px; text-align:center; font-size: 1.35rem; font-weight: 900;
     border: 2px solid var(--accent); border-radius: 10px; background: #fff; color: var(--ink);
     transition: border-color 0.3s;
     appearance: none; -webkit-appearance: none;
   }
   
   .step-btn{
-    width: 38px; height: 38px; border-radius: 50%; border: none;
+    width: 40px; height: 40px; border-radius: 50%; border: none;
     background: var(--accent); color: #fff; font-size: 1.4rem; font-weight: 900;
     cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     transition: background-color 0.3s;
@@ -227,13 +249,13 @@
   .step-btn:active{ transform: scale(0.95); }
 
   select{
-    height: 38px; padding: 0 8px; border-radius: 8px; border: 1px solid #cbd5e1;
+    height: 40px; padding: 0 8px; border-radius: 8px; border: 1px solid #cbd5e1;
     background:#fff; font-size: 0.9rem; font-weight:700; color: var(--ink); width: 100%;
   }
 
   .color-dots { display: flex; gap: 10px; }
   .dot {
-    width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
+    width: 32px; height: 32px; border-radius: 50%; cursor: pointer;
     border: 2px solid transparent; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
   }
   .dot.active { border-color: #fff; outline: 2px solid var(--ink); transform:scale(1.1); }
@@ -359,7 +381,7 @@
 
         <div class="setting-card">
           <div class="setting-title">おと</div>
-          <div style="flex:1; display:flex; gap:8px;">
+          <div style="flex:1; display:flex; gap:8px; width:100%;">
             <select id="soundSelect">
               <option value="pipipi" selected>ピピピ</option>
               <option value="chime">チャイム</option>
