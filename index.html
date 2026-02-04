@@ -3,14 +3,17 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no" />
-<title>時計タイマー</title>
+<title>ユニバーサル時計タイマー</title>
 <link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #f8fafc;
     --card: #ffffff;
     --ink: #1e293b;
+
+    /* 初期カラー（青） */
     --accent: #2563eb;
+
     --stop: #ef4444;
     --ready: #22c55e;
     --muted: #94a3b8;
@@ -23,42 +26,26 @@
     --r-lg: 16px;
     --r-md: 12px;
 
-    /* 基本サイズ（PC/タブレット） */
-    --gap: 14px;
-    --pad: 16px;
-    --btnH: 60px;
-    --btnFz: 18px;
-    --btnBigFz: 22px;
-    --clockMax: 50svh; /* 画面高さの50%まで */
+    --gap: clamp(8px, 1.4vw, 14px);
+    --pad: clamp(10px, 1.6vw, 16px);
 
     /* iOS Safari 対策 */
     --appH: calc(var(--vh, 1vh) * 100);
-  }
 
-  /* ===== スマホ・画面が低い端末用の調整 ===== */
-  @media (max-height: 750px) {
-    :root {
-      --gap: 8px;          /* 隙間を詰める */
-      --pad: 12px;         /* 外枠を詰める */
-      --btnH: 52px;        /* ボタンを少し低く */
-      --btnFz: 16px;       /* 文字を少し小さく */
-      --btnBigFz: 20px;
-      --clockMax: 42svh;   /* 時計を少し小さくしてスペース確保 */
-    }
-    .setting-card { height: 54px !important; padding: 6px 10px !important; }
-    .remain { font-size: clamp(32px, 12vw, 50px) !important; }
-  }
-  
-  /* さらに小さい画面（iPhone SEなど） */
-  @media (max-height: 600px) {
-    :root {
-      --clockMax: 35svh;   /* さらに時計を小さく */
-      --btnH: 48px;
-    }
+    /* ボタンサイズ */
+    --btnH: clamp(56px, 7vh, 68px);
+    --btnFz: clamp(16px, 2.2vw, 20px);
+    --btnBigFz: clamp(18px, 2.6vw, 26px);
+
+    /* 時計最大サイズ */
+    --clockMax: 50svh;
   }
 
   *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; margin:0; }
+
+  /* 文字が勝手に大きくなって崩れる（iOS Safari対策） */
+  html{ -webkit-text-size-adjust:100%; }
 
   body{
     font-family: "BIZ UDPGothic", system-ui, -apple-system, sans-serif;
@@ -70,22 +57,20 @@
     touch-action: manipulation;
     user-select:none; -webkit-user-select:none;
     overscroll-behavior: contain;
+    transition: background-color 0.3s;
   }
 
   /* ===== レイアウト ===== */
   .app-shell{
-    height: 100%; 
-    width: 100%;
-    max-width: 560px; /* PCでもこの幅で固定 */
-    margin: 0 auto; 
-    padding: var(--pad);
-    padding-bottom: env(safe-area-inset-bottom, 10px); /* iPhone下部のバー対策 */
-    display:flex; flex-direction:column; gap: var(--gap); 
+    height: 100%; max-width: 1100px; margin: 0 auto; padding: var(--pad);
+    display:flex; flex-direction:column; gap: var(--gap); min-height:0;
     position: relative;
-    background: var(--bg);
   }
 
-  /* シンプルモード解除ボタン */
+  /* 端末の横幅が狭いときに、要素がはみ出して押し広げるのを防ぐ */
+  .clock-area, .panel, header{ min-width:0; }
+
+  /* シンプルモード解除ボタン（通常非表示） */
   #btnExitSimple {
     display: none; position: absolute; top: 10px; right: 10px; z-index: 100;
     padding: 8px 16px; background: rgba(255,255,255,0.9);
@@ -96,59 +81,60 @@
   body.simple #btnExitSimple { display: block; }
 
   header{
-    height: 44px; display:flex; align-items:center; justify-content:space-between; gap: 10px; min-height:0; flex-shrink: 0;
+    height: 44px; display:flex; align-items:center; justify-content:space-between; gap: 10px; min-height:0;
   }
 
   .title{ display:flex; align-items:baseline; gap:10px; min-width:0; }
-  h1{ margin:0; font-size: 1.1rem; color: var(--muted2); letter-spacing:.02em; white-space:nowrap; }
+  h1{ margin:0; font-size: 1.05rem; color: var(--muted2); letter-spacing:.02em; white-space:nowrap; }
   .sub{ font-size:.85rem; color: var(--muted); white-space:nowrap; }
 
   .header-right{ display:flex; align-items:center; gap: 10px; }
+
   .toggle{ display:flex; align-items:center; gap:8px; font-size:.95rem; color: var(--muted2); cursor: pointer; }
   .toggle input{ width: 18px; height: 18px; accent-color: var(--accent); }
 
   .iconBtn{
     border: none; background: var(--card); box-shadow: 0 4px 10px rgba(2,6,23,.06);
-    border-radius: 999px; height: 36px; padding: 0 12px;
+    border-radius: 999px; height: 40px; padding: 0 12px;
     display:flex; align-items:center; gap:8px; cursor:pointer;
-    font-weight:700; color: var(--ink); font-size: 0.85rem;
+    font-weight:700; color: var(--ink);
   }
   .iconBtn:active{ transform: scale(.98); }
+  .iconBtn small{ color: var(--muted2); }
 
-  /* コンテンツレイアウト */
   .layout{
-    flex: 1; min-height:0;
-    display:flex; flex-direction: column;
+    flex: 1 1 auto; min-height:0;
+    display:grid; grid-template-columns: 1fr; grid-template-rows: 1fr auto;
     gap: var(--gap);
+  }
+
+  /* タブレット横/PCレイアウト */
+  @media (min-width: 920px) and (max-height: 980px){
+    .layout{ grid-template-columns: 1fr 420px; grid-template-rows: 1fr; align-items:stretch; }
   }
 
   /* ===== 時計エリア ===== */
   .clock-area{
-    flex: 1 1 auto; /* 必要に応じて縮小可能に */
-    display:flex; flex-direction:column;
+    min-height:0; display:flex; flex-direction:column;
     align-items:center; justify-content:center;
-    gap: 4px; min-height: 0; /* 縮小限界を撤廃 */
+    gap: clamp(6px, 1.2vh, 10px);
   }
 
   svg#clock{
-    width:auto; 
-    height: auto; 
-    max-height: 100%; /* 親要素からはみ出さない */
-    max-width: 100%;
-    aspect-ratio: 1/1; 
-    filter: drop-shadow(0 10px 20px rgba(2,6,23,0.1));
+    width:auto; height: min(var(--clockMax), 100%); max-height: var(--clockMax);
+    aspect-ratio: 1/1; filter: drop-shadow(0 6px 12px rgba(2,6,23,0.12));
   }
-  /* 扇形の色 */
+  /* 扇形の色（変数で制御） */
   #timerArc { fill: var(--accent); opacity: 0.15; transition: fill 0.3s; }
   #timerLine { stroke: var(--accent); transition: stroke 0.3s; }
 
-  .timer-display{ text-align:center; display:grid; gap: 0; flex-shrink: 0; }
+  .timer-display{ text-align:center; display:grid; gap: 4px; }
   .remain{
-    font-size: clamp(40px, 8vh, 64px); font-weight: 900;
-    font-variant-numeric: tabular-nums; line-height: 1.1; letter-spacing: 0.02em;
+    font-size: clamp(34px, 6.2vh, 64px); font-weight: 900;
+    font-variant-numeric: tabular-nums; line-height: 1.0;
   }
-  .eta{ font-size: 0.95rem; color: var(--muted2); font-weight:700; }
-  .status{ font-size: 0.8rem; color: #94a3b8; font-weight:700; }
+  .eta{ font-size: .95rem; color: var(--muted2); font-weight:700; }
+  .status{ font-size: .85rem; color: var(--muted); font-weight:700; }
 
   /* 終了時アニメーション */
   @keyframes blink { 50% { opacity: 0.45; } }
@@ -156,21 +142,19 @@
 
   /* ===== 操作パネル ===== */
   .panel{
-    background: var(--card); border-radius: var(--r-xl); padding: 16px;
-    box-shadow: var(--shadowUp); 
-    display:flex; flex-direction:column; gap: var(--gap);
-    flex-shrink: 0; /* パネルは縮めない */
+    background: var(--card); border-radius: var(--r-xl); padding: 14px;
+    box-shadow: var(--shadowUp); min-height:0; display:flex; flex-direction:column; gap: 12px;
   }
 
-  .main-btns{ display:grid; grid-template-columns: 2fr 1.2fr 1.2fr; gap: 10px; }
+  .main-btns{ display:grid; grid-template-columns: 2fr 1fr 1fr; gap: 12px; }
   .btn{
     border: none; border-radius: var(--r-lg); font-weight: 900; font-size: var(--btnFz);
     cursor: pointer; display:flex; align-items:center; justify-content:center;
-    transition: transform .08s ease; height: var(--btnH);
-    box-shadow: 0 4px 10px rgba(2,6,23,.05);
+    transition: transform .08s ease; min-height: var(--btnH);
+    box-shadow: 0 10px 20px rgba(2,6,23,.08);
   }
   .btn:active{ transform: scale(0.97); }
-  
+
   .btn-start{ background: var(--ready); color: #fff; font-size: var(--btnBigFz); }
   .btn-pause{ background: #e2e8f0; color: var(--ink); }
   .btn-reset{ background: #fff; color: var(--stop); border: 2px solid #fee2e2; box-shadow: none; }
@@ -182,64 +166,62 @@
   .card-time { grid-column: 1 / -1; }
 
   .setting-card{
-    background: #f1f5f9; border-radius: var(--r-md); padding: 8px 12px;
+    background: #f1f5f9; border-radius: var(--r-md); padding: 10px;
     display:flex; align-items:center; justify-content:space-between; gap: 10px;
-    height: 60px;
+    min-height: 64px;
   }
 
-  .setting-title{ font-weight:900; color: var(--muted2); font-size: 0.9rem; white-space:nowrap; }
+  .setting-title{ font-weight:900; color: var(--muted2); font-size: .95rem; white-space:nowrap; }
 
-  .input-stack{ display:flex; gap: 10px; align-items:center; justify-content: flex-end; width: 100%; }
-  .input-row{ display:flex; align-items:center; gap: 6px; }
+  .input-stack{ display:flex; gap: 12px; align-items:center; justify-content: flex-end; width: 100%; }
+  .input-row{ display:flex; align-items:center; gap: 8px; }
 
-  /* 数字入力欄 */
+  /* 数字入力欄：type="text"にしてブラウザ標準の▲▼を消す */
   .num{
-    width: 54px; height: 42px; text-align:center; font-size: 1.35rem; font-weight: 900;
+    width: 68px; height: 46px; text-align:center; font-size: 1.35rem; font-weight: 900;
     border: 2px solid var(--accent); border-radius: 10px; background: #fff; color: var(--ink);
     transition: border-color 0.3s;
     appearance: none; -webkit-appearance: none;
   }
-  
+
   .step-btn{
-    width: 38px; height: 38px; border-radius: 50%; border: none;
+    width: 44px; height: 44px; border-radius: 50%; border: none;
     background: var(--accent); color: #fff; font-size: 1.4rem; font-weight: 900;
     cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     transition: background-color 0.3s;
-    display:flex; align-items:center; justify-content:center; padding-bottom:4px;
   }
   .step-btn:active{ transform: scale(0.95); }
 
   /* 音選択 */
   select{
-    height: 40px; padding: 0 10px; border-radius: 10px; border: 1px solid #cbd5e1;
+    height: 42px; padding: 0 10px; border-radius: 10px; border: 1px solid #cbd5e1;
     background:#fff; font-size: 0.95rem; font-weight:700; color: var(--ink); width: 100%;
   }
 
-  /* カラーピッカー */
-  .color-dots { display: flex; gap: 10px; }
+  /* カラーピッカー（黄は削除済み / 青・緑・赤・オレンジ） */
+  .color-dots { display: flex; gap: 8px; }
   .dot {
-    width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
-    border: 2px solid transparent; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    width: 32px; height: 32px; border-radius: 50%; cursor: pointer;
+    border: 3px solid transparent; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
   }
-  .dot.active { border-color: #fff; outline: 2px solid var(--ink); transform:scale(1.1); }
+  .dot.active { border-color: #fff; outline: 2px solid var(--ink); }
 
   /* 実行中は設定を触れない */
-  body.is-running .settings-grid{ opacity:.5; pointer-events:none; filter: grayscale(10%); }
+  body.is-running .settings-grid{ opacity:.6; pointer-events:none; }
 
   /* ===== シンプル表示 ===== */
   body.simple .settings-grid { display:none; }
   body.simple .sub, body.simple .header-right { display:none; }
-  body.simple .clock-area { justify-content: center; }
   body.simple svg#clock{ max-height: 65svh; }
   body.simple .eta{ display:none; }
-  body.simple .status{ display:none; }
-  body.simple .panel{ background: transparent; box-shadow: none; padding:0; }
-  body.simple .main-btns { display: none; } 
+  body.simple .panel{ padding: 12px; background: transparent; box-shadow: none; }
+  body.simple .main-btns { display: none; }
+  body.simple .panel { background: var(--card); box-shadow: var(--shadowUp); }
 
   /* ===== ダイアログ ===== */
   dialog{
     border:none; border-radius: 18px; padding: 16px;
-    width: min(92vw, 420px); box-shadow: 0 20px 60px rgba(2,6,23,.25);
+    width: min(92vw, 460px); box-shadow: 0 20px 60px rgba(2,6,23,.25);
   }
   dialog::backdrop{ background: rgba(2,6,23,.35); }
   .dlgTitle{ margin: 0 0 6px; font-size: 1.1rem; font-weight: 900; }
@@ -254,6 +236,58 @@
     height: 40px; padding: 0 14px; border-radius: 10px; border: none;
     background:#e2e8f0; font-weight: 900; cursor:pointer;
   }
+
+  /* =========================
+     スマホ最適化（レイアウト崩れ防止）
+     ========================= */
+  @media (max-width: 430px){
+    :root{
+      /* 余白を少し詰める */
+      --pad: 10px;
+      --gap: 10px;
+
+      /* 時計と文字を少し小さく（縦に収める） */
+      --clockMax: 44svh;
+
+      /* ボタンの最小高さを下げる */
+      --btnH: 52px;
+      --btnBigFz: 22px;
+    }
+
+    header{ height: 40px; }
+    h1{ font-size: 1rem; }
+
+    /* ヘッダー右側を軽量化（幅が足りない端末向け）
+       「時刻合わせ」はアイコンだけにして幅事故を防ぐ */
+    .iconBtn span{ display:none; }
+
+    /* 残り時間の文字が大きすぎて押し出すのを防ぐ */
+    .remain{
+      font-size: clamp(30px, 5.4svh, 54px);
+    }
+
+    /* 設定グリッドを1列にして、崩れを止める */
+    .settings-grid{
+      grid-template-columns: 1fr;
+    }
+
+    /* じかん（分・秒）は縦積みにして幅崩れ防止 */
+    .input-stack{
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+    .card-time{ min-height: 92px; }
+  }
+
+  /* iPhone SE等：高さが特に低い端末向け */
+  @media (max-height: 700px){
+    :root{
+      --clockMax: 40svh;
+      --btnH: 50px;
+    }
+    .panel{ padding: 12px; }
+  }
 </style>
 </head>
 
@@ -264,7 +298,7 @@
   <header>
     <div class="title">
       <h1>時計タイマー</h1>
-      <div class="sub" id="offsetHint">補正：0秒</div>
+      <div class="sub" id="offsetHint">補正：±0分0秒</div>
     </div>
 
     <div class="header-right">
@@ -274,7 +308,7 @@
       </label>
 
       <button class="iconBtn" id="btnOpenTimeDlg" type="button" aria-label="時刻合わせ">
-        ⏱ 時刻合わせ
+        ⏱ <span>時刻合わせ</span>
       </button>
     </div>
   </header>
@@ -284,7 +318,7 @@
       <svg id="clock" viewBox="0 0 300 300" role="img" aria-label="アナログ時計">
         <defs>
           <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-            <feDropShadow dx="0" dy="1" stdDeviation="1" flood-color="#000" flood-opacity=".15"/>
+            <feDropShadow dx="0" dy="1" stdDeviation="1" flood-color="#000" flood-opacity=".18"/>
           </filter>
         </defs>
         <circle cx="150" cy="150" r="145" fill="#fff" stroke="#cbd5e1" stroke-width="2"/>
@@ -336,10 +370,10 @@
         <div class="setting-card">
           <div class="setting-title">いろ</div>
           <div class="color-dots" id="colorDots">
-            <div class="dot active" style="background:#2563eb" data-color="#2563eb"></div>
-            <div class="dot" style="background:#22c55e" data-color="#22c55e"></div>
-            <div class="dot" style="background:#ef4444" data-color="#ef4444"></div>
-            <div class="dot" style="background:#f97316" data-color="#f97316"></div>
+            <div class="dot active" style="background:#2563eb" data-color="#2563eb" title="青"></div>
+            <div class="dot" style="background:#22c55e" data-color="#22c55e" title="緑"></div>
+            <div class="dot" style="background:#ef4444" data-color="#ef4444" title="赤"></div>
+            <div class="dot" style="background:#f97316" data-color="#f97316" title="オレンジ"></div>
           </div>
         </div>
 
@@ -437,7 +471,7 @@
 
   /* ===== 時計ロジック ===== */
   function getNow(){ return new Date(Date.now() + offsetMs); }
-  
+
   function renderClock(){
     const d = getNow();
     const s = d.getSeconds() + d.getMilliseconds()/1000;
@@ -450,7 +484,7 @@
   }
   requestAnimationFrame(renderClock);
 
-  /* ===== タイマー描画 ===== */
+  /* ===== タイマー描画（扇形＋線） ===== */
   function drawTimer(rem){
     if(rem <= 0) {
       arcFill.setAttribute('d', '');
@@ -459,7 +493,7 @@
     }
     const d = getNow();
     const startDeg = (d.getMinutes() + d.getSeconds()/60)*6 - 90;
-    const sweep = (rem / 3600) * 360; 
+    const sweep = (rem / 3600) * 360;
     const endDeg = startDeg + Math.min(sweep, 359.9);
 
     const r = 132;
@@ -482,7 +516,7 @@
     const s = Math.floor(remainingSec%60);
     remainText.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
     drawTimer(remainingSec);
-    
+
     if(remainingSec > 0){
       const t = new Date(Date.now() + offsetMs + remainingSec*1000);
       etaText.textContent = `終了予定：${t.getHours()}:${String(t.getMinutes()).padStart(2,'0')}`;
@@ -494,16 +528,16 @@
     if(running) return;
     let m = parseInt(minInput.value) + dm;
     let s = parseInt(secInput.value) + ds;
-    
+
     if(s >= 60) { s-=60; m++; }
     if(s < 0) { s+=60; m--; }
-    
+
     m = Math.max(0, Math.min(60, m));
     if(m===60) s=0;
-    
+
     minInput.value = m;
     secInput.value = s;
-    
+
     durationSec = m*60 + s;
     remainingSec = durationSec;
     updateText();
@@ -513,25 +547,24 @@
     let t, i;
     const start = (e) => { e.preventDefault(); cb(); t=setTimeout(()=>{ i=setInterval(cb, 80); }, 400); };
     const end = () => { clearTimeout(t); clearInterval(i); };
-    btn.addEventListener('touchstart', start); btn.addEventListener('touchend', end);
+    btn.addEventListener('touchstart', start, {passive:false}); btn.addEventListener('touchend', end);
+    btn.addEventListener('touchcancel', end);
     btn.addEventListener('mousedown', start); btn.addEventListener('mouseup', end);
     btn.addEventListener('mouseleave', end);
   }
   attachHold(el('minUp'), ()=>nudge(1,0));
   attachHold(el('minDown'), ()=>nudge(-1,0));
-  attachHold(el('secUp'), ()=>nudge(0,5)); 
+  attachHold(el('secUp'), ()=>nudge(0,5));
   attachHold(el('secDown'), ()=>nudge(0,-5));
 
-  /* ===== オーディオ制御 (Fix) ===== */
+  /* ===== オーディオ制御 (Safari Fix) ===== */
   let audioCtx = null;
 
   function unlockAudio() {
-    if(!audioCtx) {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    if(audioCtx.state === 'suspended') {
-      audioCtx.resume();
-    }
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+
+    // 無音バッファで起動を確実化
     const buffer = audioCtx.createBuffer(1, 1, 22050);
     const source = audioCtx.createBufferSource();
     source.buffer = buffer;
@@ -542,7 +575,11 @@
   /* ===== タイマー制御 ===== */
   el('btnStart').onclick = () => {
     if(running) return;
-    unlockAudio(); 
+    unlockAudio(); // ★ここで確実に音を有効化
+    if(durationSec <= 0){
+      statusText.textContent = '時間を設定してね';
+      return;
+    }
     running = true;
     document.body.classList.add('is-running');
     statusText.textContent = 'カウント中…';
@@ -573,13 +610,13 @@
     const now = performance.now();
     remainingSec = Math.max(0, (endTime - now)/1000);
     updateText();
-    
+
     if(remainingSec <= 0.05){
       running = false;
       document.body.classList.remove('is-running');
       statusText.textContent = '時間です';
       remainText.classList.add('finished');
-      playAlarm(); // 音再生
+      playAlarm();
       remainingSec = 0;
       updateText();
       return;
@@ -595,10 +632,10 @@
     osc.type = type; osc.frequency.value = freq;
     osc.connect(g); g.connect(audioCtx.destination);
     const t = audioCtx.currentTime + start;
-    g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(0.5, t+0.01);
-    g.gain.setValueAtTime(0.5, t+dur-0.01);
-    g.gain.linearRampToValueAtTime(0, t+dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.5, t+0.01);
+    g.gain.setValueAtTime(0.5, t+Math.max(0.02, dur-0.02));
+    g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
     osc.start(t); osc.stop(t+dur+0.05);
   }
 
@@ -617,12 +654,12 @@
     }
   }
 
-  el('btnPreview').onclick = () => { 
+  el('btnPreview').onclick = () => {
     unlockAudio();
     playAlarm();
   };
 
-  /* ===== カラー設定 ===== */
+  /* ===== カラー設定（クリックでアクセント変更） ===== */
   const dots = document.querySelectorAll('.dot');
   dots.forEach(d => {
     d.onclick = () => {
@@ -656,7 +693,12 @@
     };
   });
   el('btnSaveOffset').onclick = () => dlg.close();
-  el('btnResetOffset').onclick = () => { offsetMs=0; localStorage.setItem('ut_offset',0); dlg.close(); el('offsetHint').textContent = '補正：0秒'; };
+  el('btnResetOffset').onclick = () => {
+    offsetMs = 0;
+    localStorage.setItem('ut_offset', 0);
+    dlg.close();
+    el('offsetHint').textContent = '補正：0秒';
+  };
 
   // 初期化
   el('offsetHint').textContent = `補正：${Math.round(offsetMs/1000)}秒`;
