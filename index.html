@@ -86,6 +86,10 @@
     overscroll-behavior: contain;
   }
 
+  /* ===== 追加：秒針・残り時間の非表示 ===== */
+  body.hide-sec #hand-sec { display: none; }
+  body.hide-remain #remainText { display: none; }
+
   /* ===== レイアウト ===== */
   .app-shell{
     height: 100%;
@@ -192,6 +196,7 @@
     display:grid; grid-template-columns: 1fr 1fr; gap: 10px;
   }
   .card-time { grid-column: 1 / -1; }
+  .card-view { grid-column: 1 / -1; } /* 追加：表示設定を横いっぱい */
 
   .setting-card{
     background: #f1f5f9; border-radius: var(--r-md); padding: 8px 12px;
@@ -232,7 +237,11 @@
   }
   .dot.active { border-color: #fff; outline: 2px solid var(--ink); transform:scale(1.1); }
 
-  body.is-running .settings-grid{ opacity:.5; pointer-events:none; filter: grayscale(10%); }
+  /* ===== 変更：走行中は “表示設定” 以外を操作不可 ===== */
+  body.is-running .settings-grid { opacity: 1; filter: none; }
+  body.is-running .settings-grid .setting-card:not(.view-card){
+    opacity:.5; pointer-events:none; filter: grayscale(10%);
+  }
 
   /* シンプル表示 */
   body.simple .settings-grid { display:none; }
@@ -341,6 +350,21 @@
           </div>
         </div>
 
+        <!-- 追加：表示設定（秒針/残り時間の非表示） -->
+        <div class="setting-card card-view view-card">
+          <div class="setting-title">ひょうじ</div>
+          <div style="flex:1; display:flex; align-items:center; justify-content:flex-end; gap:14px; flex-wrap:wrap;">
+            <label class="toggle" title="秒針を表示しません">
+              <input type="checkbox" id="hideSecToggle" />
+              <span>秒針なし</span>
+            </label>
+            <label class="toggle" title="残り時間（大きな数字）を表示しません">
+              <input type="checkbox" id="hideRemainToggle" />
+              <span>残り時間なし</span>
+            </label>
+          </div>
+        </div>
+
         <div class="setting-card">
           <div class="setting-title">いろ</div>
           <div class="color-dots" id="colorDots">
@@ -417,6 +441,31 @@
   const secInput = el('secInput');
   const soundSelect = el('soundSelect');
 
+  /* ===== 追加：表示設定（秒針/残り時間） ===== */
+  const hideSecToggle = el('hideSecToggle');
+  const hideRemainToggle = el('hideRemainToggle');
+  let hideSec = localStorage.getItem('ut_hide_sec') === '1';
+  let hideRemain = localStorage.getItem('ut_hide_remain') === '1';
+
+  const applyViewFlags = () => {
+    document.body.classList.toggle('hide-sec', hideSec);
+    document.body.classList.toggle('hide-remain', hideRemain);
+    hideSecToggle.checked = hideSec;
+    hideRemainToggle.checked = hideRemain;
+  };
+
+  hideSecToggle.addEventListener('change', (e) => {
+    hideSec = !!e.target.checked;
+    localStorage.setItem('ut_hide_sec', hideSec ? '1' : '0');
+    applyViewFlags();
+  });
+
+  hideRemainToggle.addEventListener('change', (e) => {
+    hideRemain = !!e.target.checked;
+    localStorage.setItem('ut_hide_remain', hideRemain ? '1' : '0');
+    applyViewFlags();
+  });
+
   /* ===== 設定値 ===== */
   let durationSec = 300;
   let remainingSec = 300;
@@ -464,6 +513,7 @@
     const h = (d.getHours()%12) + m/60;
     hH.setAttribute('transform', `rotate(${h*30})`);
     hM.setAttribute('transform', `rotate(${m*6})`);
+    // 秒針は非表示でも回転はしてOK（表示制御はCSS）
     hS.setAttribute('transform', `rotate(${s*6})`);
     requestAnimationFrame(renderClock);
   }
@@ -807,6 +857,10 @@
   // 入力値から初期時間を作る
   durationSec = (parseInt(minInput.value) || 0) * 60 + (parseInt(secInput.value) || 0);
   remainingSec = durationSec;
+
+  // 追加：表示設定の初期反映（localStorage）
+  applyViewFlags();
+
   updateText();
 })();
 </script>
