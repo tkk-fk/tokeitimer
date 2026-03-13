@@ -200,7 +200,7 @@
   /* --- アクションボタン --- */
   .action-row {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr;
+    grid-template-columns: 2fr 1fr 1fr;
     gap: 8px;
   }
   .btn {
@@ -213,7 +213,7 @@
   }
   .btn:active { transform: scale(.97); }
   .btn-start { background: var(--ready); color: #fff; }
-  .btn-pause { background: #e2e8f0; color: var(--ink); }
+  .btn-stop { background: #e2e8f0; color: var(--ink); }
   .btn-reset { background: #fff; color: var(--stop); border: 2px solid #fecaca; }
   .btn-full { background: #1e293b; color: #fff; font-size: clamp(.75rem, 2.2vw, .9rem); }
 
@@ -470,8 +470,7 @@
       </div>
 
       <div class="action-row">
-        <button id="btnStart" class="btn btn-start">スタート</button>
-        <button id="btnPause" class="btn btn-pause">ストップ</button>
+        <button id="btnToggle" class="btn btn-start">スタート</button>
         <button id="btnReset" class="btn btn-reset">リセット</button>
         <button id="btnFull" class="btn btn-full">全画面</button>
       </div>
@@ -788,19 +787,36 @@
   }
 
   /* タイマー操作 */
-  el('btnStart').onclick = () => {
-    if (running) return;
-    if (remainingSec <= 0) { statusText.textContent = '時間を設定してください'; return; }
-    unlockAudio(); running = true;
-    document.body.classList.add('is-running');
-    statusText.textContent = 'カウント中…';
-    remainText.classList.remove('finished');
-    endTime = performance.now() + remainingSec * 1000;
-    tick();
-  };
-  el('btnPause').onclick = () => {
-    running = false; document.body.classList.remove('is-running');
-    statusText.textContent = '一時停止'; cancelAnimationFrame(rafId);
+  const btnToggle = el('btnToggle');
+  function updateToggleBtn() {
+    if (running) {
+      btnToggle.textContent = 'ストップ';
+      btnToggle.classList.remove('btn-start');
+      btnToggle.classList.add('btn-stop');
+    } else {
+      btnToggle.textContent = 'スタート';
+      btnToggle.classList.remove('btn-stop');
+      btnToggle.classList.add('btn-start');
+    }
+  }
+
+  btnToggle.onclick = () => {
+    if (running) {
+      // ストップ
+      running = false; document.body.classList.remove('is-running');
+      statusText.textContent = '一時停止'; cancelAnimationFrame(rafId);
+      updateToggleBtn();
+    } else {
+      // スタート
+      if (remainingSec <= 0) { statusText.textContent = '時間を設定してください'; return; }
+      unlockAudio(); running = true;
+      document.body.classList.add('is-running');
+      statusText.textContent = 'カウント中…';
+      remainText.classList.remove('finished');
+      endTime = performance.now() + remainingSec * 1000;
+      updateToggleBtn();
+      tick();
+    }
   };
   el('btnReset').onclick = () => {
     running = false; document.body.classList.remove('is-running');
@@ -809,7 +825,7 @@
     durationSec = 0; remainingSec = 0;
     statusText.textContent = '待機中';
     remainText.classList.remove('finished');
-    updatePresetHighlight(); updateText();
+    updatePresetHighlight(); updateText(); updateToggleBtn();
   };
 
   function tick() {
@@ -820,13 +836,10 @@
       running = false; document.body.classList.remove('is-running');
       statusText.textContent = '時間です';
       remainText.classList.add('finished');
-      playAlarm(); remainingSec = 0; updateText(); return;
+      playAlarm(); remainingSec = 0; updateText(); updateToggleBtn(); return;
     }
     rafId = requestAnimationFrame(tick);
   }
-
-  /* 色変更 */
-  document.querySelectorAll('.dot').forEach(d => {
 
   /* 点滅中の残り時間タップでリセット */
   remainText.addEventListener('click', () => {
@@ -835,8 +848,11 @@
     statusText.textContent = '待機中';
     minInput.value = 0; secInput.value = 0;
     durationSec = 0; remainingSec = 0;
-    updatePresetHighlight(); updateText();
+    updatePresetHighlight(); updateText(); updateToggleBtn();
   });
+
+  /* 色変更 */
+  document.querySelectorAll('.dot').forEach(d => {
     d.onclick = () => {
       document.querySelectorAll('.dot').forEach(x => x.classList.remove('active'));
       d.classList.add('active');
