@@ -134,7 +134,32 @@
   body.is-running .status-dot { background: var(--ready); }
 
   @keyframes blink { 50% { opacity: .4; } }
-  .finished { animation: blink .65s step-end infinite; color: var(--stop) !important; cursor: pointer; }
+  .finished { animation: blink .65s step-end infinite; color: var(--stop) !important; }
+
+  /* 点滅中は画面全体がタップで停止可能だと示すヒント */
+  body.is-finished .clock-zone { cursor: pointer; }
+  body.is-finished::after {
+    content: '画面をタップで停止';
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, calc(-50% - 40vh));
+    background: rgba(239,68,68,.95);
+    color: #fff;
+    padding: 8px 18px;
+    border-radius: 999px;
+    font-size: .85rem;
+    font-weight: 900;
+    box-shadow: 0 4px 14px rgba(239,68,68,.35);
+    pointer-events: none;
+    z-index: 50;
+    white-space: nowrap;
+    opacity: 0;
+    animation: fadeHint 2.4s ease-in-out infinite;
+  }
+  @keyframes fadeHint {
+    0%, 100% { opacity: 0; transform: translate(-50%, calc(-50% - 40vh)) translateY(-6px); }
+    50% { opacity: 1; transform: translate(-50%, calc(-50% - 40vh)) translateY(0); }
+  }
 
   /* ===== ボトムパネル ===== */
   .bottom-panel {
@@ -165,12 +190,17 @@
     cursor: pointer;
     font-family: inherit;
     text-align: center;
-    transition: background .15s, transform .1s;
+    transition: background .12s, transform .08s;
     min-height: 44px;
     display: flex; align-items: center; justify-content: center;
+    position: relative;
   }
   .preset:active { transform: scale(.94); }
-  .preset.active { background: var(--accent); color: #fff; }
+  @keyframes presetFlash {
+    0% { background: var(--accent); color: #fff; transform: scale(1.04); }
+    100% { background: var(--accent-soft); color: var(--accent); transform: scale(1); }
+  }
+  .preset.flash { animation: presetFlash .35s ease-out; }
 
   /* --- 微調整 --- */
   .fine-tune {
@@ -194,8 +224,9 @@
     box-shadow: var(--shadow-sm);
     padding-bottom: 2px;
     min-width: 38px;
+    transition: transform .08s;
   }
-  .step-btn:active { transform: scale(.92); }
+  .step-btn:active { transform: scale(.88); }
 
   /* --- アクションボタン --- */
   .action-row {
@@ -217,14 +248,28 @@
   .btn-reset { background: #fff; color: var(--stop); border: 2px solid #fecaca; }
   .btn-full { background: #1e293b; color: #fff; font-size: clamp(.75rem, 2.2vw, .9rem); }
 
-  /* --- 設定リンク --- */
+  /* --- 設定ボタン（改善版：くっきり目立つ） --- */
   .open-settings-btn {
-    border: none; background: none;
-    color: var(--muted); font-weight: 700;
-    font-size: .76rem; cursor: pointer; font-family: inherit;
-    padding: 2px 0;
-    display: flex; align-items: center; justify-content: center; gap: 4px;
+    border: 2px solid var(--accent);
+    background: #fff;
+    color: var(--accent);
+    font-weight: 900;
+    font-size: .92rem;
+    cursor: pointer;
+    font-family: inherit;
+    padding: 10px 14px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 46px;
+    width: 100%;
+    transition: transform .08s, background .15s;
+    box-shadow: var(--shadow-sm);
   }
+  .open-settings-btn:active { transform: scale(.97); background: var(--accent-soft); }
+  .open-settings-btn .gear { font-size: 1.15rem; line-height: 1; }
 
   /* ===== 走行中：パネル最小化 ===== */
   body.is-running .presets { display: none; }
@@ -321,15 +366,59 @@
   body.fullscreen-mode .top-bar { display: none; }
   body.fullscreen-mode .timer-info { padding-bottom: 12px; }
 
-  #btnExitFull {
-    display: none; position: absolute; top: 10px; right: 10px; z-index: 100;
-    padding: 10px 18px; background: rgba(255,255,255,.92);
-    border: 1px solid var(--muted); border-radius: 999px;
-    font-size: .82rem; font-weight: 700; color: var(--ink);
-    box-shadow: 0 4px 12px rgba(0,0,0,.08);
-    cursor: pointer; font-family: inherit;
+  /* 全画面モード時の右上コントロール（スタート/ストップ + 全画面終了） */
+  .fs-controls {
+    display: none;
+    position: absolute; top: 10px; right: 10px; z-index: 100;
+    gap: 8px;
+    align-items: center;
   }
-  body.fullscreen-mode #btnExitFull { display: block; }
+  body.fullscreen-mode .fs-controls { display: flex; }
+  .fs-controls button {
+    border: none; border-radius: 999px;
+    font-family: inherit; font-weight: 900;
+    cursor: pointer;
+    padding: 10px 20px;
+    font-size: .9rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,.12);
+    transition: transform .08s;
+  }
+  .fs-controls button:active { transform: scale(.96); }
+  #btnToggleFull {
+    background: var(--ready); color: #fff;
+    box-shadow: 0 4px 14px rgba(22,163,74,.35);
+    min-width: 110px;
+  }
+  #btnToggleFull.is-stop {
+    background: rgba(255,255,255,.95); color: var(--ink);
+    border: 1px solid var(--muted);
+    box-shadow: 0 4px 12px rgba(0,0,0,.10);
+  }
+  /* 「えんちょう」ボタン：終了状態で目立たせる（オレンジ＋脈動） */
+  #btnToggleFull.is-extend {
+    background: #f59e0b; color: #fff;
+    box-shadow: 0 4px 14px rgba(245,158,11,.45);
+    animation: extendPulse 1.4s ease-in-out infinite;
+    padding: 12px 24px;
+    font-size: 1rem;
+  }
+  @keyframes extendPulse {
+    0%, 100% { box-shadow: 0 4px 14px rgba(245,158,11,.45), 0 0 0 0 rgba(245,158,11,.55); }
+    50%      { box-shadow: 0 4px 18px rgba(245,158,11,.70), 0 0 0 10px rgba(245,158,11,0);  }
+  }
+  #btnExitFull {
+    background: rgba(255,255,255,.92); color: var(--ink);
+    border: 1px solid var(--muted);
+    font-weight: 700; font-size: .82rem;
+  }
+
+  /* 延長モード：全画面中でも bottom-panel を表示して時間追加できるように */
+  body.fullscreen-mode.extending .bottom-panel { display: flex; }
+  /* 延長モード中は fs-controls の「えんちょう」自体を隠す（本体パネルのスタートを使う） */
+  body.fullscreen-mode.extending #btnToggleFull { display: none; }
+
+  /* 全画面＋点滅時は「画面をタップ」ヒントを非表示（ボタン操作で明示） */
+  body.fullscreen-mode.is-finished::after { display: none; }
 
   /* ===== タブレット 2カラム ===== */
   @media (min-width: 768px) and (min-height: 500px) {
@@ -349,6 +438,7 @@
     .num { width: 52px; height: 44px; font-size: 1.3rem; }
     .step-btn { width: 42px; height: 42px; font-size: 1.3rem; }
     body.is-running .bottom-panel { gap: 14px; padding: 20px; }
+    .open-settings-btn { font-size: 1rem; min-height: 50px; }
   }
 
   @media (min-width: 1024px) {
@@ -367,6 +457,7 @@
     .fine-tune { gap: 4px; }
     .num { width: 40px; height: 34px; font-size: 1rem; }
     .step-btn { width: 34px; height: 34px; font-size: 1.1rem; min-width: 34px; }
+    .open-settings-btn { min-height: 40px; font-size: .82rem; padding: 8px 12px; }
   }
 
   /* ===== 超低画面（横向きスマホ等） ===== */
@@ -378,6 +469,7 @@
     .btn { height: 40px; border-radius: 10px; }
     .fine-tune { display: none; }
     .remain-bottom { font-size: clamp(22px, 5vw, 32px); }
+    .open-settings-btn { min-height: 36px; font-size: .78rem; padding: 6px 10px; }
   }
 
   /* ===== ダイアログ ===== */
@@ -402,7 +494,10 @@
 
 <body>
 <div class="app" id="app">
-  <button id="btnExitFull" type="button">✕ 全画面を終了</button>
+  <div class="fs-controls">
+    <button id="btnToggleFull" type="button">スタート</button>
+    <button id="btnExitFull" type="button">✕ 全画面を終了</button>
+  </div>
 
   <div class="top-bar">
     <div class="app-title">時計タイマー <span class="offset-hint" id="offsetHint">補正：0秒</span></div>
@@ -451,31 +546,33 @@
       <div class="presets" id="presets">
         <button class="preset" data-m="1" data-s="0">1分</button>
         <button class="preset" data-m="3" data-s="0">3分</button>
-        <button class="preset active" data-m="5" data-s="0">5分</button>
+        <button class="preset" data-m="5" data-s="0">5分</button>
         <button class="preset" data-m="10" data-s="0">10分</button>
         <button class="preset" data-m="15" data-s="0">15分</button>
         <button class="preset" data-m="20" data-s="0">20分</button>
       </div>
 
       <div class="fine-tune">
-        <button class="step-btn" id="minDown">−</button>
-        <input type="text" inputmode="numeric" id="minInput" class="num" value="5" readonly>
+        <button class="step-btn" id="minDown" type="button">−</button>
+        <input type="text" inputmode="numeric" id="minInput" class="num" value="0" readonly>
         <span class="unit">分</span>
-        <button class="step-btn" id="minUp">＋</button>
+        <button class="step-btn" id="minUp" type="button">＋</button>
         <span style="width:8px;"></span>
-        <button class="step-btn" id="secDown">−</button>
+        <button class="step-btn" id="secDown" type="button">−</button>
         <input type="text" inputmode="numeric" id="secInput" class="num" value="0" readonly>
         <span class="unit">秒</span>
-        <button class="step-btn" id="secUp">＋</button>
+        <button class="step-btn" id="secUp" type="button">＋</button>
       </div>
 
       <div class="action-row">
-        <button id="btnToggle" class="btn btn-start">スタート</button>
-        <button id="btnReset" class="btn btn-reset">リセット</button>
-        <button id="btnFull" class="btn btn-full">全画面</button>
+        <button id="btnToggle" class="btn btn-start" type="button">スタート</button>
+        <button id="btnReset" class="btn btn-reset" type="button">リセット</button>
+        <button id="btnFull" class="btn btn-full" type="button">全画面</button>
       </div>
 
-      <button class="open-settings-btn" id="openSettings" type="button">⚙ いろ・おと・ひょうじ設定</button>
+      <button class="open-settings-btn" id="openSettings" type="button">
+        <span class="gear">⚙</span><span>いろ・おと・ひょうじ 設定</span>
+      </button>
     </div>
   </div>
 </div>
@@ -514,7 +611,7 @@
           <option value="chime">チャイム</option>
           <option value="bell">ベル</option>
         </select>
-        <button class="btn-mini" id="btnPreview">試聴</button>
+        <button class="btn-mini" id="btnPreview" type="button">試聴</button>
       </div>
       <div class="vol-row">
         <span>音量</span>
@@ -523,7 +620,7 @@
       </div>
     </div>
 
-    <button class="sheet-close" id="closeSheet">とじる</button>
+    <button class="sheet-close" id="closeSheet" type="button">とじる</button>
   </div>
 </div>
 
@@ -536,14 +633,14 @@
     <div style="font-weight:bold;">現在：<span id="offsetText">±0分</span></div>
   </div>
   <div class="badge-row">
-    <button class="badge" data-d="-60000">-1分</button>
-    <button class="badge" data-d="-10000">-10秒</button>
-    <button class="badge" data-d="10000">+10秒</button>
-    <button class="badge" data-d="60000">+1分</button>
+    <button class="badge" data-d="-60000" type="button">-1分</button>
+    <button class="badge" data-d="-10000" type="button">-10秒</button>
+    <button class="badge" data-d="10000" type="button">+10秒</button>
+    <button class="badge" data-d="60000" type="button">+1分</button>
   </div>
   <div class="dlg-actions">
-    <button class="btn-mini" id="btnResetOffset">リセット</button>
-    <button class="btn-mini" id="btnSaveOffset" style="background:var(--accent); color:#fff;">決定</button>
+    <button class="btn-mini" id="btnResetOffset" type="button">リセット</button>
+    <button class="btn-mini" id="btnSaveOffset" type="button" style="background:var(--accent); color:#fff;">決定</button>
   </div>
 </dialog>
 
@@ -581,7 +678,8 @@
   });
 
   /* 状態 */
-  let durationSec = 300, remainingSec = 300;
+  const MAX_SEC = 60 * 60; // 最大60分
+  let durationSec = 0, remainingSec = 0;
   let running = false, endTime = 0, rafId = 0;
   let offsetMs = 0;
   try { offsetMs = Number(localStorage.getItem('ut_offset') || 0); } catch(e){}
@@ -664,55 +762,115 @@
     }
   }
 
-  /* 入力操作 */
+  /* 時間セット（直接値指定） */
   function setTime(m, s) {
-    m = Math.max(0, Math.min(60, m));
-    if (m === 60) s = 0;
-    s = Math.max(0, Math.min(59, s));
+    m = Math.max(0, m);
+    s = Math.max(0, s);
+    // 秒の繰り上げ・繰り下げ
+    if (s >= 60) { m += Math.floor(s / 60); s = s % 60; }
+    // 上限60分でクランプ
+    let total = m * 60 + s;
+    if (total > MAX_SEC) total = MAX_SEC;
+    m = Math.floor(total / 60);
+    s = total % 60;
     minInput.value = m;
     secInput.value = s;
-    durationSec = m * 60 + s;
+    durationSec = total;
     remainingSec = durationSec;
     statusText.textContent = '待機中';
     remainText.classList.remove('finished');
-    updatePresetHighlight();
+    document.body.classList.remove('is-finished');
     updateText();
   }
 
-  function nudge(dm, ds) {
+  /* 時間加算（プリセット用） */
+  function addTime(addM, addS) {
     if (running) return;
-    let m = parseInt(minInput.value) + dm;
-    let s = parseInt(secInput.value) + ds;
-    if (s >= 60) { s -= 60; m++; }
-    if (s < 0) { s += 60; m--; }
+    const addTotal = addM * 60 + addS;
+    const newTotal = Math.min(MAX_SEC, durationSec + addTotal);
+    const m = Math.floor(newTotal / 60);
+    const s = newTotal % 60;
     setTime(m, s);
   }
 
-  function attachHold(btn, cb) {
-    let t, i;
-    const start = e => { e.preventDefault(); cb(); t = setTimeout(() => { i = setInterval(cb, 80); }, 400); };
-    const end = () => { clearTimeout(t); clearInterval(i); };
-    btn.addEventListener('touchstart', start, { passive: false }); btn.addEventListener('touchend', end);
-    btn.addEventListener('mousedown', start); btn.addEventListener('mouseup', end); btn.addEventListener('mouseleave', end);
+  /* ＋／− 微調整：1クリック1ステップ（連続実行なし） */
+  function nudge(dm, ds) {
+    if (running) return;
+    let m = parseInt(minInput.value) || 0;
+    let s = parseInt(secInput.value) || 0;
+    let total = m * 60 + s + dm * 60 + ds;
+    if (total < 0) total = 0;
+    if (total > MAX_SEC) total = MAX_SEC;
+    setTime(Math.floor(total / 60), total % 60);
   }
-  attachHold(el('minUp'), () => nudge(1, 0));
-  attachHold(el('minDown'), () => nudge(-1, 0));
-  attachHold(el('secUp'), () => nudge(0, 5));
-  attachHold(el('secDown'), () => nudge(0, -5));
 
-  /* プリセット */
-  const presetBtns = document.querySelectorAll('.preset');
-  function updatePresetHighlight() {
-    const m = parseInt(minInput.value), s = parseInt(secInput.value);
-    presetBtns.forEach(b => {
-      b.classList.toggle('active', parseInt(b.dataset.m) === m && parseInt(b.dataset.s) === s);
+  /* ＋／− 長押し対応：押している間連続、離せば必ず止まる
+     - Pointer Events で touch/mouse/pen を一括管理
+     - pointerup / pointercancel / pointerleave / blur / visibilitychange で
+       「指が外れた」「画面が切り替わった」など、あらゆるケースで確実に停止 */
+  function attachHold(btn, cb) {
+    let initialTimer = null;
+    let repeatInterval = null;
+    let isHolding = false;
+
+    const stop = () => {
+      isHolding = false;
+      if (initialTimer) { clearTimeout(initialTimer); initialTimer = null; }
+      if (repeatInterval) { clearInterval(repeatInterval); repeatInterval = null; }
+    };
+
+    const start = (e) => {
+      e.preventDefault();
+      if (isHolding) return; // 二重起動防止
+      isHolding = true;
+      cb(); // すぐに1回
+      // 350ms待ってから連続実行（誤押下で連射されないように）
+      initialTimer = setTimeout(() => {
+        // 80ms間隔で連続実行
+        repeatInterval = setInterval(() => {
+          if (!isHolding) { clearInterval(repeatInterval); repeatInterval = null; return; }
+          cb();
+        }, 80);
+      }, 350);
+    };
+
+    // 押下開始
+    btn.addEventListener('pointerdown', start);
+    // 「離す」「キャンセル」「ボタンから指が外れる」のいずれでも止める
+    btn.addEventListener('pointerup', stop);
+    btn.addEventListener('pointercancel', stop);
+    btn.addEventListener('pointerleave', stop);
+    // クリックイベントは pointerdown で既に処理済みなので発火しても無視させる
+    btn.addEventListener('click', e => e.preventDefault());
+
+    // 安全網：ウィンドウ・ドキュメントレベルでも停止トリガを登録
+    window.addEventListener('pointerup', stop);
+    window.addEventListener('pointercancel', stop);
+    window.addEventListener('blur', stop);
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) stop();
     });
   }
+
+  attachHold(el('minUp'),   () => nudge(1, 0));
+  attachHold(el('minDown'), () => nudge(-1, 0));
+  attachHold(el('secUp'),   () => nudge(0, 5));
+  attachHold(el('secDown'), () => nudge(0, -5));
+
+  /* プリセット：累積式（押した回数分加算） */
+  const presetBtns = document.querySelectorAll('.preset');
   presetBtns.forEach(b => {
-    b.onclick = () => {
+    b.addEventListener('click', () => {
       if (running) return;
-      setTime(parseInt(b.dataset.m), parseInt(b.dataset.s));
-    };
+      const addM = parseInt(b.dataset.m) || 0;
+      const addS = parseInt(b.dataset.s) || 0;
+      addTime(addM, addS);
+      // 視覚フィードバック（押すたびに一瞬光る）
+      b.classList.remove('flash');
+      // リフロー強制（同じボタンを連打しても毎回アニメーションが発火するように）
+      void b.offsetWidth;
+      b.classList.add('flash');
+    });
   });
 
   /* オーディオ */
@@ -754,10 +912,28 @@
     g.gain.linearRampToValueAtTime(0, t0 + dur + 0.28);
     o.start(t0); o.stop(t0 + dur + 0.33);
   }
+  /* やさしい：ド・ミ・ドの3音（柔らかい） */
   function playSoftChime() {
     [{f:523.25,t:0,d:.22},{f:659.25,t:.18,d:.26},{f:523.25,t:.44,d:.30}].forEach(n => {
       playNote(n.f, n.t, n.d, {type:'sine', gain:.85});
       playNote(n.f, n.t, n.d, {type:'sine', gain:.35, detune:7});
+    });
+  }
+  /* チャイム：学校チャイム風（ウエストミンスター風の4音「キーン・コーン・カーン・コーン」） */
+  function playSchoolChime() {
+    const notes = [
+      {f: 659.25, t: 0.00, d: .42}, // ミ
+      {f: 587.33, t: 0.46, d: .42}, // レ
+      {f: 523.25, t: 0.92, d: .42}, // ド
+      {f: 392.00, t: 1.38, d: .70}, // ソ（低めで終結感）
+    ];
+    notes.forEach(n => {
+      // メインのサイン波
+      playNote(n.f, n.t, n.d, {type:'sine', gain:.80});
+      // オクターブ上の倍音で鐘らしい明るさを足す
+      playNote(n.f * 2, n.t, n.d * 0.6, {type:'sine', gain:.18});
+      // 三角波を微デチューンで重ねて厚みと揺らぎを出す
+      playNote(n.f, n.t, n.d, {type:'triangle', gain:.22, detune:5});
     });
   }
   function playSoftPipipi() { [0,.22,.44].forEach(t => playNote(660, t, .10, {type:'sine', gain:.65})); }
@@ -769,7 +945,10 @@
   function playAlarm() {
     if (!audioCtx) return;
     const m = soundSelect.value;
-    if (m === 'pipipi') playSoftPipipi(); else if (m === 'bell') playSoftBell(); else playSoftChime();
+    if (m === 'pipipi') playSoftPipipi();
+    else if (m === 'bell') playSoftBell();
+    else if (m === 'chime') playSchoolChime();
+    else playSoftChime(); // 'soft'（やさしい）
   }
 
   el('btnPreview').onclick = () => { unlockAudio(); playAlarm(); };
@@ -788,7 +967,9 @@
 
   /* タイマー操作 */
   const btnToggle = el('btnToggle');
+  const btnToggleFull = el('btnToggleFull');
   function updateToggleBtn() {
+    // 本体ボタン（btnToggle）：スタート ⇄ ストップ
     if (running) {
       btnToggle.textContent = 'ストップ';
       btnToggle.classList.remove('btn-start');
@@ -798,7 +979,37 @@
       btnToggle.classList.remove('btn-stop');
       btnToggle.classList.add('btn-start');
     }
+    // 全画面用ボタン（btnToggleFull）：スタート / ストップ / えんちょう の3状態
+    btnToggleFull.classList.remove('is-stop', 'is-extend');
+    if (document.body.classList.contains('is-finished')) {
+      btnToggleFull.textContent = 'えんちょう';
+      btnToggleFull.classList.add('is-extend');
+    } else if (running) {
+      btnToggleFull.textContent = 'ストップ';
+      btnToggleFull.classList.add('is-stop');
+    } else {
+      btnToggleFull.textContent = 'スタート';
+    }
   }
+
+  // 全画面用ボタンのクリック：
+  //  - 「えんちょう」状態なら、延長モードに入って本体パネルを表示
+  //  - それ以外は本体ボタンに委譲
+  btnToggleFull.addEventListener('click', () => {
+    if (document.body.classList.contains('is-finished')) {
+      // 点滅停止 → 延長モードに遷移（全画面はそのまま、本体パネルが現れる）
+      remainText.classList.remove('finished');
+      document.body.classList.remove('is-finished');
+      document.body.classList.add('extending');
+      statusText.textContent = '時間を設定してください';
+      minInput.value = 0; secInput.value = 0;
+      durationSec = 0; remainingSec = 0;
+      updateText();
+      updateToggleBtn();
+      return;
+    }
+    btnToggle.click();
+  });
 
   btnToggle.onclick = () => {
     if (running) {
@@ -811,8 +1022,10 @@
       if (remainingSec <= 0) { statusText.textContent = '時間を設定してください'; return; }
       unlockAudio(); running = true;
       document.body.classList.add('is-running');
+      document.body.classList.remove('extending'); // 延長モードを終了
       statusText.textContent = 'カウント中…';
       remainText.classList.remove('finished');
+      document.body.classList.remove('is-finished');
       endTime = performance.now() + remainingSec * 1000;
       updateToggleBtn();
       tick();
@@ -825,7 +1038,8 @@
     durationSec = 0; remainingSec = 0;
     statusText.textContent = '待機中';
     remainText.classList.remove('finished');
-    updatePresetHighlight(); updateText(); updateToggleBtn();
+    document.body.classList.remove('is-finished');
+    updateText(); updateToggleBtn();
   };
 
   function tick() {
@@ -836,28 +1050,40 @@
       running = false; document.body.classList.remove('is-running');
       statusText.textContent = '時間です';
       remainText.classList.add('finished');
+      document.body.classList.add('is-finished');
       playAlarm(); remainingSec = 0; updateText(); updateToggleBtn(); return;
     }
     rafId = requestAnimationFrame(tick);
   }
 
-  /* 点滅中の残り時間タップでリセット */
-  remainText.addEventListener('click', () => {
-    if (!remainText.classList.contains('finished')) return;
+  /* === 0:00 点滅中：画面のどこを触っても点滅停止 ===
+     ただし全画面モード中は専用ボタン（えんちょう / 全画面を終了）で操作するため、
+     画面タップでの自動停止は無効にする */
+  function stopFinishedBlink(e) {
+    if (!document.body.classList.contains('is-finished')) return;
+    if (document.body.classList.contains('fullscreen-mode')) return;
     remainText.classList.remove('finished');
+    document.body.classList.remove('is-finished');
     statusText.textContent = '待機中';
     minInput.value = 0; secInput.value = 0;
     durationSec = 0; remainingSec = 0;
-    updatePresetHighlight(); updateText(); updateToggleBtn();
-  });
+    updateText(); updateToggleBtn();
+  }
+  document.addEventListener('pointerdown', stopFinishedBlink, true);
 
   /* 色変更 */
   document.querySelectorAll('.dot').forEach(d => {
     d.onclick = () => {
       document.querySelectorAll('.dot').forEach(x => x.classList.remove('active'));
       d.classList.add('active');
-      document.documentElement.style.setProperty('--accent', d.dataset.color);
-      document.documentElement.style.setProperty('--accent-soft', d.dataset.color + '1a');
+      const c = d.dataset.color;
+      document.documentElement.style.setProperty('--accent', c);
+      // accent-soft（10%透過）も連動
+      const hex = c.replace('#','');
+      const r = parseInt(hex.substr(0,2),16);
+      const g = parseInt(hex.substr(2,2),16);
+      const b = parseInt(hex.substr(4,2),16);
+      document.documentElement.style.setProperty('--accent-soft', `rgba(${r},${g},${b},0.10)`);
     };
   });
 
@@ -876,6 +1102,7 @@
   }
   function exitFullscreen() {
     document.body.classList.remove('fullscreen-mode');
+    document.body.classList.remove('extending');
     const efs = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
     if (efs && document.fullscreenElement) efs.call(document).catch(() => {});
   }
@@ -911,9 +1138,9 @@
 
   /* 初期化 */
   el('offsetHint').textContent = `補正：${Math.round(offsetMs / 1000)}秒`;
-  durationSec = (parseInt(minInput.value) || 0) * 60 + (parseInt(secInput.value) || 0);
-  remainingSec = durationSec;
-  applyViewFlags(); updatePresetHighlight(); updateText();
+  durationSec = 0;
+  remainingSec = 0;
+  applyViewFlags(); updateText();
 })();
 </script>
 </body>
